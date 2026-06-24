@@ -1,0 +1,2608 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeadPath — CSR Lead Development Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-base:#0A0F1E;--bg-panel:#111827;--bg-card:#1A2236;--bg-hover:#1E2D47;
+  --border:#1F2D45;--border-light:#2D3F5C;
+  --accent:#6366F1;--accent-dim:rgba(99,102,241,0.15);--accent-hover:#818CF8;
+  --amber:#F59E0B;--amber-dim:rgba(245,158,11,0.15);
+  --green:#10B981;--green-dim:rgba(16,185,129,0.15);
+  --red:#EF4444;--red-dim:rgba(239,68,68,0.15);
+  --blue:#3B82F6;--blue-dim:rgba(59,130,246,0.15);
+  --purple:#8B5CF6;
+  --text-primary:#F1F5F9;--text-secondary:#94A3B8;--text-muted:#475569;
+  --sidebar-w:240px;--topbar-h:60px;
+  --radius:10px;--radius-sm:6px;
+  --shadow:0 4px 24px rgba(0,0,0,0.4);--shadow-sm:0 2px 8px rgba(0,0,0,0.3);
+  --transition:0.18s cubic-bezier(0.4,0,0.2,1);
+}
+[data-theme="light"]{
+  --bg-base:#F1F5F9;--bg-panel:#FFFFFF;--bg-card:#F8FAFC;--bg-hover:#EEF2FF;
+  --border:#E2E8F0;--border-light:#CBD5E1;
+  --text-primary:#0F172A;--text-secondary:#475569;--text-muted:#94A3B8;
+  --shadow:0 4px 24px rgba(0,0,0,0.08);--shadow-sm:0 2px 8px rgba(0,0,0,0.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;-webkit-font-smoothing:antialiased;}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg-base);color:var(--text-primary);min-height:100vh;overflow:hidden;}
+button{font-family:inherit;cursor:pointer;border:none;outline:none;}
+input,textarea,select{font-family:inherit;}
+a{text-decoration:none;color:inherit;}
+ul{list-style:none;}
+canvas{display:block;}
+
+/* AUTH */
+#auth-screen{position:fixed;inset:0;z-index:1000;background:var(--bg-base);display:flex;align-items:center;justify-content:center;transition:opacity 0.4s ease,visibility 0.4s ease;}
+#auth-screen.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+.auth-container{width:420px;max-width:95vw;background:var(--bg-panel);border:1px solid var(--border);border-radius:16px;padding:40px;box-shadow:var(--shadow);}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px;}
+.auth-logo-mark{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff;}
+.auth-logo-name{font-size:20px;font-weight:700;}
+.auth-logo-name span{color:var(--accent);}
+.auth-title{font-size:22px;font-weight:700;margin-bottom:6px;}
+.auth-sub{color:var(--text-secondary);font-size:13px;margin-bottom:28px;}
+.auth-role-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px;}
+.auth-role-tab{padding:10px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:transparent;color:var(--text-secondary);font-size:13px;font-weight:500;transition:var(--transition);cursor:pointer;}
+.auth-role-tab.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent-hover);}
+.form-group{margin-bottom:16px;}
+.form-label{font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:0.04em;}
+.form-input{width:100%;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:14px;transition:var(--transition);}
+.form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+.auth-btn{width:100%;padding:12px;background:var(--accent);color:#fff;border-radius:var(--radius-sm);font-size:14px;font-weight:600;transition:var(--transition);margin-top:8px;}
+.auth-btn:hover{background:var(--accent-hover);transform:translateY(-1px);}
+.auth-hint{font-size:11px;color:var(--text-muted);text-align:center;margin-top:12px;}
+
+/* APP SHELL */
+#app{display:flex;height:100vh;overflow:hidden;opacity:0;transition:opacity 0.4s ease;}
+#app.visible{opacity:1;}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--bg-panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;transition:width var(--transition),min-width var(--transition);z-index:50;}
+.sidebar.collapsed{width:60px;min-width:60px;}
+.sidebar-header{padding:20px 16px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;min-height:var(--topbar-h);}
+.sidebar-logo-mark{width:32px;height:32px;min-width:32px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;}
+.sidebar-logo-text{font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;transition:opacity var(--transition),width var(--transition);}
+.sidebar-logo-text span{color:var(--accent);}
+.sidebar.collapsed .sidebar-logo-text{opacity:0;width:0;}
+.sidebar-nav{flex:1;padding:12px 8px;}
+.nav-section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);padding:12px 8px 4px;white-space:nowrap;overflow:hidden;transition:opacity var(--transition);}
+.sidebar.collapsed .nav-section-label{opacity:0;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);color:var(--text-secondary);font-size:13.5px;font-weight:500;cursor:pointer;transition:var(--transition);white-space:nowrap;overflow:hidden;margin-bottom:2px;position:relative;}
+.nav-item:hover{background:var(--bg-hover);color:var(--text-primary);}
+.nav-item.active{background:var(--accent-dim);color:var(--accent-hover);}
+.nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:18px;background:var(--accent);border-radius:0 2px 2px 0;}
+.nav-icon{width:18px;min-width:18px;text-align:center;font-size:15px;}
+.nav-label{transition:opacity var(--transition);}
+.sidebar.collapsed .nav-label{opacity:0;}
+.nav-badge{margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center;transition:opacity var(--transition);}
+.sidebar.collapsed .nav-badge{opacity:0;}
+.sidebar-footer{padding:12px 8px;border-top:1px solid var(--border);}
+.user-card{display:flex;align-items:center;gap:10px;padding:8px;border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);}
+.user-card:hover{background:var(--bg-hover);}
+.user-avatar{width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;background:linear-gradient(135deg,var(--accent),var(--purple));}
+.user-info{overflow:hidden;flex:1;}
+.user-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-role{font-size:11px;color:var(--text-muted);}
+.sidebar.collapsed .user-info{display:none;}
+
+/* MAIN AREA */
+.main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg-base);}
+.topbar{height:var(--topbar-h);min-height:var(--topbar-h);background:var(--bg-panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;}
+.topbar-toggle{width:32px;height:32px;border-radius:var(--radius-sm);background:transparent;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;font-size:16px;transition:var(--transition);}
+.topbar-toggle:hover{background:var(--bg-hover);color:var(--text-primary);}
+.topbar-breadcrumb{font-size:14px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.topbar-btn{padding:6px 12px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);transition:var(--transition);display:flex;align-items:center;gap:6px;}
+.topbar-btn:hover{border-color:var(--accent);color:var(--accent);}
+.theme-toggle{width:32px;height:32px;border-radius:var(--radius-sm);background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);font-size:14px;display:flex;align-items:center;justify-content:center;transition:var(--transition);}
+.theme-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.notif-btn{width:32px;height:32px;border-radius:var(--radius-sm);background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);font-size:14px;display:flex;align-items:center;justify-content:center;position:relative;transition:var(--transition);}
+.notif-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;background:var(--accent);border-radius:50%;border:1.5px solid var(--bg-panel);}
+
+/* PAGE CONTENT */
+.page-content{flex:1;overflow-y:auto;padding:28px;}
+.page{display:none;}
+.page.active{display:block;animation:fadeInUp 0.25s ease;}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.page-header{margin-bottom:24px;}
+.page-title{font-size:22px;font-weight:700;margin-bottom:4px;}
+.page-subtitle{font-size:14px;color:var(--text-secondary);}
+
+/* CARDS */
+.card{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:var(--transition);}
+.card:hover{border-color:var(--border-light);}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.card-title{font-size:14px;font-weight:600;}
+.card-subtitle{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.card-action{font-size:12px;color:var(--accent);font-weight:500;cursor:pointer;transition:var(--transition);}
+.card-action:hover{color:var(--accent-hover);}
+
+/* GRIDS */
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.grid-21{display:grid;grid-template-columns:2fr 1fr;gap:20px;}
+.grid-12{display:grid;grid-template-columns:1fr 2fr;gap:20px;}
+
+/* STAT CARDS */
+.stat-card{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;transition:var(--transition);}
+.stat-card:hover{border-color:var(--border-light);transform:translateY(-1px);}
+.stat-label{font-size:12px;color:var(--text-muted);font-weight:500;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;}
+.stat-value{font-size:26px;font-weight:700;line-height:1;margin-bottom:6px;}
+.stat-change{font-size:12px;font-weight:500;display:flex;align-items:center;gap:4px;}
+.stat-change.up{color:var(--green);}
+.stat-change.down{color:var(--red);}
+.stat-change.neutral{color:var(--text-muted);}
+
+/* PROGRESS */
+.progress-wrap{margin-bottom:12px;}
+.progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.progress-label{font-size:13px;font-weight:500;}
+.progress-value{font-size:12px;font-weight:600;color:var(--accent);}
+.progress-bar{height:6px;background:var(--border);border-radius:100px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--accent),var(--accent-hover));transition:width 0.6s cubic-bezier(0.4,0,0.2,1);}
+.progress-fill.green{background:linear-gradient(90deg,var(--green),#34D399);}
+.progress-fill.amber{background:linear-gradient(90deg,var(--amber),#FCD34D);}
+.progress-fill.red{background:linear-gradient(90deg,var(--red),#F87171);}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-accent{background:var(--accent-dim);color:var(--accent-hover);}
+.badge-green{background:var(--green-dim);color:var(--green);}
+.badge-amber{background:var(--amber-dim);color:var(--amber);}
+.badge-red{background:var(--red-dim);color:var(--red);}
+.badge-blue{background:var(--blue-dim);color:var(--blue);}
+.badge-muted{background:var(--border);color:var(--text-secondary);}
+
+/* TABS */
+.tab-group{display:flex;gap:4px;background:var(--bg-card);padding:4px;border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:20px;width:fit-content;flex-wrap:wrap;}
+.tab-btn{padding:7px 16px;border-radius:5px;font-size:13px;font-weight:500;color:var(--text-secondary);background:transparent;transition:var(--transition);cursor:pointer;}
+.tab-btn.active{background:var(--accent);color:#fff;}
+.tab-btn:not(.active):hover{background:var(--bg-hover);color:var(--text-primary);}
+.tab-pane{display:none;}
+.tab-pane.active{display:block;animation:fadeInUp 0.2s ease;}
+
+/* TABLES */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:10px 14px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:12px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);}
+td:first-child{color:var(--text-primary);font-weight:500;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg-hover);}
+
+/* ACTIVITY */
+.activity-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.activity-item:last-child{border-bottom:none;}
+.activity-icon{width:32px;height:32px;min-width:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.activity-body{flex:1;}
+.activity-title{font-size:13px;font-weight:500;margin-bottom:2px;}
+.activity-meta{font-size:12px;color:var(--text-muted);}
+
+/* INPUTS */
+.field-textarea{width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;color:var(--text-primary);font-size:13px;resize:vertical;min-height:100px;transition:var(--transition);font-family:inherit;}
+.field-textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+.field-select{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;color:var(--text-primary);font-size:13px;cursor:pointer;transition:var(--transition);}
+.field-select:focus{outline:none;border-color:var(--accent);}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;transition:var(--transition);}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-hover);transform:translateY(-1px);}
+.btn-secondary{background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary);}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+.btn-ghost{background:transparent;color:var(--text-secondary);}
+.btn-ghost:hover{background:var(--bg-hover);color:var(--text-primary);}
+.btn-success{background:var(--green);color:#fff;}
+.btn-sm{padding:6px 12px;font-size:12px;}
+
+/* SCENARIO CARDS */
+.scenario-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;}
+.scenario-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;}
+.scenario-title{font-size:14px;font-weight:600;}
+.scenario-body{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:16px;}
+.scenario-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+
+/* AI FEEDBACK */
+.ai-feedback{background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08));border:1px solid rgba(99,102,241,0.2);border-radius:var(--radius);padding:18px;margin-top:16px;}
+.ai-feedback-header{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--accent-hover);margin-bottom:14px;}
+.score-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;margin-bottom:14px;}
+.score-item{text-align:center;}
+.score-num{font-size:22px;font-weight:700;}
+.score-num.high{color:var(--green);}
+.score-num.mid{color:var(--amber);}
+.score-num.low{color:var(--red);}
+.score-name{font-size:11px;color:var(--text-muted);margin-top:2px;}
+
+/* TIMELINE */
+.timeline{position:relative;padding-left:20px;}
+.timeline::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:1.5px;background:var(--border);}
+.timeline-item{position:relative;padding-bottom:20px;}
+.timeline-item::before{content:'';position:absolute;left:-17px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--border);border:2px solid var(--bg-panel);}
+.timeline-item.done::before{background:var(--green);}
+.timeline-item.active::before{background:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+.timeline-date{font-size:11px;color:var(--text-muted);margin-bottom:3px;}
+.timeline-title{font-size:13px;font-weight:600;margin-bottom:3px;}
+.timeline-body{font-size:12px;color:var(--text-secondary);}
+
+/* HEATMAP */
+.heatmap-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.heatmap-cell{border-radius:var(--radius-sm);padding:14px 12px;text-align:center;transition:var(--transition);}
+.heatmap-cell:hover{transform:scale(1.03);}
+.heatmap-label{font-size:12px;font-weight:600;margin-bottom:6px;}
+.heatmap-score{font-size:22px;font-weight:700;}
+
+/* READINESS BADGE */
+.readiness-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:30px;font-size:13px;font-weight:700;}
+.readiness-badge.not-ready{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,0.3);}
+.readiness-badge.emerging{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,158,11,0.3);}
+.readiness-badge.trial{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(59,130,246,0.3);}
+.readiness-badge.ready{background:var(--green-dim);color:var(--green);border:1px solid rgba(16,185,129,0.3);}
+
+/* JOURNAL */
+.journal-entry{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:12px;transition:var(--transition);}
+.journal-entry:hover{border-color:var(--border-light);}
+.journal-week{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent);margin-bottom:10px;}
+.journal-quadrant{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.journal-q-label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;}
+.journal-q-text{font-size:13px;color:var(--text-secondary);line-height:1.5;}
+
+/* DECISION CARD */
+.decision-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:12px;}
+
+/* TICKET */
+.ticket-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:var(--transition);margin-bottom:8px;}
+.ticket-card:hover{border-color:var(--accent);background:var(--bg-hover);}
+.ticket-card.selected{border-color:var(--accent);background:var(--accent-dim);}
+.ticket-id{font-size:11px;font-family:monospace;color:var(--text-muted);}
+.ticket-title{font-size:13px;font-weight:600;margin:4px 0;}
+.ticket-meta{font-size:12px;color:var(--text-muted);}
+
+/* USER ROW */
+.user-row-avatar{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;vertical-align:middle;margin-right:8px;}
+
+/* MODULE CARD */
+.module-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;cursor:pointer;transition:var(--transition);}
+.module-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow-sm);}
+.module-icon{font-size:24px;margin-bottom:10px;}
+.module-title{font-size:14px;font-weight:600;margin-bottom:6px;}
+.module-desc{font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:12px;}
+
+/* FRAMEWORK */
+.framework-card{background:linear-gradient(135deg,var(--accent-dim),rgba(139,92,246,0.08));border:1px solid rgba(99,102,241,0.2);border-radius:var(--radius);padding:16px;}
+.framework-title{font-size:13px;font-weight:700;color:var(--accent-hover);margin-bottom:10px;}
+.framework-steps{list-style:none;}
+.framework-steps li{font-size:12.5px;color:var(--text-secondary);padding:4px 0;display:flex;gap:8px;}
+.framework-steps li::before{content:'→';color:var(--accent);font-weight:700;min-width:14px;}
+
+/* STAKEHOLDER MAP */
+.stakeholder-map{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:680px;}
+.stakeholder-node{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;transition:var(--transition);}
+.stakeholder-node:hover{border-color:var(--accent);}
+.stakeholder-node.center{background:var(--accent-dim);border-color:var(--accent);}
+.sn-role{font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px;}
+.sn-name{font-size:13px;font-weight:700;}
+.sn-dept{font-size:11px;color:var(--text-secondary);}
+
+/* PROMO WEEKS */
+.promo-week-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.promo-week-row:last-child{border-bottom:none;}
+.promo-week-label{font-size:12px;font-weight:600;width:60px;min-width:60px;color:var(--text-muted);}
+.promo-week-bars{flex:1;display:flex;gap:4px;}
+.promo-mini-bar{flex:1;height:20px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;transition:var(--transition);}
+.promo-week-score{font-size:13px;font-weight:700;width:40px;text-align:right;}
+
+/* NOTIFICATION */
+.notif-panel{position:absolute;top:50px;right:16px;width:320px;background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);z-index:100;display:none;}
+.notif-panel.open{display:block;animation:fadeInUp 0.2s ease;}
+.notif-panel-header{padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.notif-panel-title{font-size:14px;font-weight:700;}
+.notif-item{padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:var(--transition);display:flex;gap:10px;}
+.notif-item:last-child{border-bottom:none;}
+.notif-item:hover{background:var(--bg-hover);}
+.notif-item-title{font-size:13px;font-weight:500;margin-bottom:2px;}
+.notif-item-sub{font-size:12px;color:var(--text-muted);}
+.notif-item-dot{width:7px;height:7px;background:var(--accent);border-radius:50%;min-width:7px;margin-top:4px;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;animation:fadeInUp 0.2s ease;}
+.modal{background:var(--bg-panel);border:1px solid var(--border);border-radius:14px;padding:28px;max-width:520px;width:95%;box-shadow:var(--shadow);max-height:90vh;overflow-y:auto;}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.modal-title{font-size:17px;font-weight:700;}
+.modal-close{width:28px;height:28px;border-radius:6px;background:var(--bg-card);color:var(--text-secondary);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.modal-close:hover{background:var(--bg-hover);color:var(--text-primary);}
+
+/* VIDEO */
+.video-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:var(--transition);}
+.video-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.video-thumb{width:100%;aspect-ratio:16/9;background:var(--bg-base);display:flex;align-items:center;justify-content:center;font-size:28px;position:relative;}
+.video-thumb-overlay{position:absolute;inset:0;background:rgba(99,102,241,0.12);display:flex;align-items:center;justify-content:center;opacity:0;transition:var(--transition);}
+.video-card:hover .video-thumb-overlay{opacity:1;}
+.video-play{width:40px;height:40px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;padding-left:3px;}
+.video-info{padding:12px;}
+.video-title{font-size:13px;font-weight:600;margin-bottom:4px;}
+.video-meta{font-size:11px;color:var(--text-muted);}
+
+/* AUDIENCE CHIPS */
+.audience-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+.audience-chip{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:transparent;font-size:12px;font-weight:500;color:var(--text-secondary);cursor:pointer;transition:var(--transition);}
+.audience-chip.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent-hover);}
+.audience-chip:hover:not(.active){border-color:var(--border-light);color:var(--text-primary);}
+
+/* RANK */
+.rank-num{font-size:16px;font-weight:700;color:var(--text-muted);width:24px;display:inline-block;}
+.rank-1 .rank-num{color:var(--amber);}
+.rank-2 .rank-num{color:#94A3B8;}
+.rank-3 .rank-num{color:#CD7F32;}
+
+/* FEEDBACK */
+.feedback-li{display:flex;gap:8px;margin-bottom:6px;align-items:flex-start;line-height:1.5;font-size:13px;}
+.feedback-dot{width:6px;height:6px;border-radius:50%;min-width:6px;margin-top:5px;}
+
+/* AI COACH BARS */
+.ai-score-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.ai-score-bar-label{font-size:12px;font-weight:500;width:140px;min-width:140px;}
+.ai-score-bar-track{flex:1;height:7px;background:var(--border);border-radius:100px;overflow:hidden;}
+.ai-score-bar-fill{height:100%;border-radius:100px;}
+.ai-score-bar-num{font-size:12px;font-weight:700;width:30px;text-align:right;}
+
+/* MISC */
+.divider{height:1px;background:var(--border);margin:20px 0;}
+.section-gap{margin-bottom:24px;}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:100;transform:translateX(-100%);transition:transform 0.25s ease;}
+  .sidebar.mobile-open{transform:translateX(0);}
+  .grid-4{grid-template-columns:1fr 1fr;}
+  .grid-3{grid-template-columns:1fr 1fr;}
+  .grid-12,.grid-21{grid-template-columns:1fr;}
+  .heatmap-grid{grid-template-columns:repeat(2,1fr);}
+  .stakeholder-map{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:600px){
+  .grid-4,.grid-3,.grid-2{grid-template-columns:1fr;}
+  .page-content{padding:16px;}
+  .heatmap-grid{grid-template-columns:1fr 1fr;}
+  .tab-group{width:100%;}
+  .journal-quadrant{grid-template-columns:1fr;}
+}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px;}
+::-webkit-scrollbar-thumb:hover{background:var(--border-light);}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-container">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">L</div>
+      <div class="auth-logo-name">Lead<span>Path</span></div>
+    </div>
+    <div class="auth-title">Welcome back</div>
+    <div class="auth-sub">Sign in to your development dashboard</div>
+    <div class="auth-role-tabs">
+      <button class="auth-role-tab active" onclick="setRole('csr',this)">🎯 CSR Trainee</button>
+      <button class="auth-role-tab" onclick="setRole('admin',this)">⚙️ Admin / Manager</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" type="email" value="maria@company.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" value="••••••••">
+    </div>
+    <button class="auth-btn" onclick="doLogin()">Sign In</button>
+    <div class="auth-hint">Demo: Select a role above then click Sign In</div>
+  </div>
+</div>
+
+<!-- NOTIFICATION PANEL -->
+<div class="notif-panel" id="notif-panel">
+  <div class="notif-panel-header">
+    <div class="notif-panel-title">Notifications</div>
+    <span class="badge badge-accent">4 new</span>
+  </div>
+  <div class="notif-item"><div class="notif-item-dot"></div><div><div class="notif-item-title">New feedback on Week 5 submission</div><div class="notif-item-sub">Manager Nicole left a comment · 1h ago</div></div></div>
+  <div class="notif-item"><div class="notif-item-dot"></div><div><div class="notif-item-title">Leadership Scenario #3 unlocked</div><div class="notif-item-sub">Delegation exercise now available · 3h ago</div></div></div>
+  <div class="notif-item"><div class="notif-item-dot"></div><div><div class="notif-item-title">Promotion readiness updated</div><div class="notif-item-sub">Score moved to 78% — Emerging Lead · Yesterday</div></div></div>
+  <div class="notif-item"><div class="notif-item-dot" style="background:var(--border)"></div><div><div class="notif-item-title">Week 4 review approved</div><div class="notif-item-sub">Approved by Nicole Cruz · 2d ago</div></div></div>
+</div>
+
+<!-- APP SHELL -->
+<div id="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo-mark">L</div>
+      <div class="sidebar-logo-text">Lead<span>Path</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <div class="nav-item active" onclick="showPage('dashboard',this)">
+        <span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span>
+      </div>
+      <div class="nav-section-label">Train</div>
+      <div class="nav-item" onclick="showPage('learn',this)">
+        <span class="nav-icon">📚</span><span class="nav-label">Learn</span>
+      </div>
+      <div class="nav-item" onclick="showPage('practice',this)">
+        <span class="nav-icon">🎯</span><span class="nav-label">Practice</span>
+        <span class="nav-badge">3</span>
+      </div>
+      <div class="nav-item" onclick="showPage('aitools',this)">
+        <span class="nav-icon">🤖</span><span class="nav-label">AI Tools</span>
+      </div>
+      <div class="nav-section-label">Track</div>
+      <div class="nav-item" onclick="showPage('decisions',this)">
+        <span class="nav-icon">⚖️</span><span class="nav-label">Decision Center</span>
+      </div>
+      <div class="nav-item" onclick="showPage('performance',this)">
+        <span class="nav-icon">📊</span><span class="nav-label">Performance</span>
+      </div>
+      <div class="nav-section-label admin-only" style="display:none">Admin</div>
+      <div class="nav-item admin-only" style="display:none" onclick="showPage('admin',this)">
+        <span class="nav-icon">⚙️</span><span class="nav-label">Admin Portal</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar" id="user-avatar">M</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">Maria Santos</div>
+          <div class="user-role" id="user-role">CSR Trainee · Week 5</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <div class="nav-item" onclick="doLogout()">
+          <span class="nav-icon">🚪</span><span class="nav-label">Sign Out</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <div class="main-area">
+    <div class="topbar">
+      <button class="topbar-toggle" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-breadcrumb">
+        <span id="topbar-section">Dashboard</span>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-btn" id="week-indicator">📅 Week 5 of 8</button>
+        <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙</button>
+        <button class="notif-btn" onclick="toggleNotif()">🔔<span class="notif-dot"></span></button>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+<!-- ====== DASHBOARD PAGE ====== -->
+<div class="page active" id="page-dashboard">
+  <div class="page-header">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div class="page-title">Good morning, Maria 👋</div>
+        <div class="page-subtitle">Week 5 of 8 · You're 62% of the way to promotion readiness</div>
+      </div>
+      <span class="readiness-badge emerging">⚡ Emerging Lead</span>
+    </div>
+  </div>
+
+  <div class="grid-4 section-gap">
+    <div class="stat-card"><div class="stat-label">Promotion Readiness</div><div class="stat-value" style="color:var(--amber)">78%</div><div class="stat-change up">↑ +6% this week</div></div>
+    <div class="stat-card"><div class="stat-label">Completion Rate</div><div class="stat-value" style="color:var(--accent)">84%</div><div class="stat-change up">↑ +4% from last week</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Communication Score</div><div class="stat-value" style="color:var(--green)">88</div><div class="stat-change up">↑ +3 pts</div></div>
+    <div class="stat-card"><div class="stat-label">Exercises This Week</div><div class="stat-value">6 / 8</div><div class="stat-change neutral">2 remaining</div></div>
+  </div>
+
+  <div class="grid-21 section-gap">
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">Weekly Focus — Week 5</div><div class="card-subtitle">Escalation Framework & Stakeholder Communication</div></div>
+          <span class="badge badge-accent">In Progress</span>
+        </div>
+        <div class="progress-wrap"><div class="progress-header"><span class="progress-label">Communication Academy</span><span class="progress-value">100%</span></div><div class="progress-bar"><div class="progress-fill green" style="width:100%"></div></div></div>
+        <div class="progress-wrap"><div class="progress-header"><span class="progress-label">Leadership Scenarios</span><span class="progress-value">67%</span></div><div class="progress-bar"><div class="progress-fill" style="width:67%"></div></div></div>
+        <div class="progress-wrap"><div class="progress-header"><span class="progress-label">Escalation Exercise</span><span class="progress-value">50%</span></div><div class="progress-bar"><div class="progress-fill amber" style="width:50%"></div></div></div>
+        <div class="progress-wrap"><div class="progress-header"><span class="progress-label">Decision Journal Entry</span><span class="progress-value">0%</span></div><div class="progress-bar"><div class="progress-fill red" style="width:0%"></div></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Assigned This Week</div><span class="card-action" onclick="showPage('practice',document.querySelector('[onclick*=practice]'))">View all →</span></div>
+        <div class="activity-item"><div class="activity-icon" style="background:var(--green-dim)">✅</div><div class="activity-body"><div class="activity-title">Executive Email Rewrite — Escalation</div><div class="activity-meta">Completed · Score: 91/100 · Communication</div></div></div>
+        <div class="activity-item"><div class="activity-icon" style="background:var(--green-dim)">✅</div><div class="activity-body"><div class="activity-title">Vendor Conflict Response</div><div class="activity-meta">Completed · Score: 84/100 · Communication</div></div></div>
+        <div class="activity-item"><div class="activity-icon" style="background:var(--accent-dim)">▶️</div><div class="activity-body"><div class="activity-title">Missed Deadline Coaching Scenario</div><div class="activity-meta">In Progress · Leadership · Due Friday</div></div></div>
+        <div class="activity-item"><div class="activity-icon" style="background:var(--border)">📝</div><div class="activity-body"><div class="activity-title">Week 5 Decision Journal Entry</div><div class="activity-meta">Not started · Due Sunday · Required</div></div></div>
+        <div class="activity-item" style="border:none"><div class="activity-icon" style="background:var(--border)">📊</div><div class="activity-body"><div class="activity-title">Ticket Simulation — Priority Triage</div><div class="activity-meta">Not started · Simulation Center · Due Friday</div></div></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Manager Feedback</div><span class="badge badge-green">Week 4</span></div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div class="user-avatar" style="background:linear-gradient(135deg,#10B981,#34D399);font-size:11px;">NC</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Nicole Cruz <span style="font-size:11px;color:var(--text-muted);font-weight:400;">· Account Director</span></div>
+            <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">"Maria's escalation framing this week was significantly sharper. The executive summary showed real awareness of audience — concise, no fluff. Still seeing hesitation in delegation language. Next week: push yourself to assign tasks with clear accountability, not just 'Can you help with...' language."</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:6px;"><span class="badge badge-green">↑ Communication</span><span class="badge badge-amber">Delegation Focus</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Recent Achievements</div><span class="card-action">View all</span></div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--amber-dim);border-radius:var(--radius-sm);border:1px solid rgba(245,158,11,0.2);">
+            <span style="font-size:22px;">🏆</span>
+            <div><div style="font-size:13px;font-weight:700;color:var(--amber);">Executive Voice Unlocked</div><div style="font-size:11px;color:var(--text-muted);">Scored 90+ on 3 executive communication exercises</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--accent-dim);border-radius:var(--radius-sm);border:1px solid rgba(99,102,241,0.2);">
+            <span style="font-size:22px;">⚡</span>
+            <div><div style="font-size:13px;font-weight:700;color:var(--accent-hover);">Escalation Specialist</div><div style="font-size:11px;color:var(--text-muted);">Completed all Week 4 escalation simulations</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--green-dim);border-radius:var(--radius-sm);border:1px solid rgba(16,185,129,0.2);">
+            <span style="font-size:22px;">🎯</span>
+            <div><div style="font-size:13px;font-weight:700;color:var(--green);">Consistency Streak — 5 Weeks</div><div style="font-size:11px;color:var(--text-muted);">Submitted on time for 5 consecutive weeks</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Upcoming Milestones</div></div>
+        <div class="timeline">
+          <div class="timeline-item done"><div class="timeline-date">Week 4 · Completed</div><div class="timeline-title">Escalation Framework Module</div></div>
+          <div class="timeline-item active"><div class="timeline-date">Week 5 · Current</div><div class="timeline-title">Stakeholder Communication Mastery</div><div class="timeline-body">Complete 2 remaining exercises to unlock Week 6</div></div>
+          <div class="timeline-item"><div class="timeline-date">Week 6 · Upcoming</div><div class="timeline-title">Delegation & Accountability Deep Dive</div></div>
+          <div class="timeline-item"><div class="timeline-date">Week 8 · Final</div><div class="timeline-title">Promotion Readiness Review</div><div class="timeline-body">Manager-assessed final evaluation</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== LEARN PAGE ====== -->
+<div class="page" id="page-learn">
+  <div class="page-header"><div class="page-title">Learn</div><div class="page-subtitle">Structured academies to build communication, leadership, and business skills</div></div>
+  <div class="tab-group">
+    <button class="tab-btn active" onclick="switchTab('learn','comm',this)">💬 Communication Academy</button>
+    <button class="tab-btn" onclick="switchTab('learn','leadership',this)">🧭 Leadership Academy</button>
+    <button class="tab-btn" onclick="switchTab('learn','business',this)">📈 Business Thinking</button>
+  </div>
+
+  <!-- COMM ACADEMY -->
+  <div class="tab-pane active" id="learn-tab-comm">
+    <div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;font-weight:500;">Filter by Audience</div>
+    <div class="audience-chips">
+      <button class="audience-chip active" onclick="filterAudience(this,'all')">All</button>
+      <button class="audience-chip" onclick="filterAudience(this,'executive')">Executive</button>
+      <button class="audience-chip" onclick="filterAudience(this,'supervisor')">Supervisor</button>
+      <button class="audience-chip" onclick="filterAudience(this,'peer')">Peer</button>
+      <button class="audience-chip" onclick="filterAudience(this,'customer')">Customer</button>
+      <button class="audience-chip" onclick="filterAudience(this,'vendor')">Vendor</button>
+      <button class="audience-chip" onclick="filterAudience(this,'junior')">Junior CSR</button>
+    </div>
+    <div class="grid-2" id="audience-content">
+      <div class="card audience-card" data-audience="executive">
+        <div class="card-header"><div><div class="card-title">🎩 Executive Communication</div><div class="card-subtitle">C-suite, VPs, Directors</div></div><span class="badge badge-amber">Advanced</span></div>
+        <div class="framework-card" style="margin-bottom:16px;">
+          <div class="framework-title">BLUF Framework (Bottom Line Up Front)</div>
+          <ul class="framework-steps">
+            <li>State the decision or recommendation in sentence 1</li>
+            <li>Provide 2–3 supporting data points or reasons</li>
+            <li>Identify the risk if no action is taken</li>
+            <li>State the ask clearly — approval, input, or awareness only</li>
+          </ul>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Video Library</div>
+        <div class="grid-2">
+          <div class="video-card"><div class="video-thumb" style="background:linear-gradient(135deg,#1a1f35,#0d1117);">📹<div class="video-thumb-overlay"><div class="video-play">▶</div></div></div><div class="video-info"><div class="video-title">Writing for the C-Suite</div><div class="video-meta">8 min · McKinsey Framework</div></div></div>
+          <div class="video-card"><div class="video-thumb" style="background:linear-gradient(135deg,#1a1f35,#0d1117);">📹<div class="video-thumb-overlay"><div class="video-play">▶</div></div></div><div class="video-info"><div class="video-title">Executive Escalation Language</div><div class="video-meta">6 min · Case Study</div></div></div>
+        </div>
+      </div>
+      <div class="card audience-card" data-audience="customer">
+        <div class="card-header"><div><div class="card-title">🤝 Customer Communication</div><div class="card-subtitle">Empathy + clarity under pressure</div></div><span class="badge badge-green">Core</span></div>
+        <div class="framework-card" style="margin-bottom:14px;">
+          <div class="framework-title">ACE Response Framework</div>
+          <ul class="framework-steps">
+            <li><strong>A</strong>cknowledge — Validate frustration without blame</li>
+            <li><strong>C</strong>larify — Confirm your understanding of the issue</li>
+            <li><strong>E</strong>xecute — Commit to a concrete next step and timeline</li>
+          </ul>
+        </div>
+        <div style="background:var(--bg-card);border-radius:var(--radius-sm);padding:10px;border:1px solid var(--border);margin-bottom:8px;"><div style="font-size:10px;font-weight:700;color:var(--red);text-transform:uppercase;margin-bottom:4px;">❌ Before</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">"Sorry for the issue! We'll look into it ASAP. Thanks for your patience!"</div></div>
+        <div style="background:var(--green-dim);border-radius:var(--radius-sm);padding:10px;border:1px solid rgba(16,185,129,0.2);"><div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;margin-bottom:4px;">✅ After</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">"I understand this delay is causing real disruption — that's not acceptable on our end. I've escalated this to fulfillment and you'll have a tracking update by 3 PM today. I'll follow up personally."</div></div>
+      </div>
+      <div class="card audience-card" data-audience="supervisor">
+        <div class="card-header"><div><div class="card-title">👔 Supervisor Communication</div><div class="card-subtitle">Managing up with confidence</div></div><span class="badge badge-accent">Intermediate</span></div>
+        <div class="framework-card" style="margin-bottom:14px;">
+          <div class="framework-title">FYI vs. FYA vs. FYD Framework</div>
+          <ul class="framework-steps">
+            <li><strong>FYI</strong> (For Your Information) — Awareness only, no action needed</li>
+            <li><strong>FYA</strong> (For Your Action) — Clear ask with a deadline attached</li>
+            <li><strong>FYD</strong> (For Your Decision) — Options presented, needs a call from them</li>
+          </ul>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">Common mistake: Sending everything as FYI. When you blur the line between awareness and action, managers stop reading carefully and things fall through.</div>
+      </div>
+      <div class="card audience-card" data-audience="peer">
+        <div class="card-header"><div><div class="card-title">💬 Peer Communication</div><div class="card-subtitle">Collaboration, clarity, no politics</div></div><span class="badge badge-muted">Foundational</span></div>
+        <div class="framework-card" style="margin-bottom:14px;">
+          <div class="framework-title">SBI Feedback Model (Peer Version)</div>
+          <ul class="framework-steps">
+            <li><strong>S</strong>ituation — Name the specific event, not a pattern</li>
+            <li><strong>B</strong>ehavior — Describe what was observed (no judgment)</li>
+            <li><strong>I</strong>mpact — Share the effect on the team or outcome</li>
+          </ul>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;">Avoid: "You always..." or "Everyone thinks..." — these trigger defensiveness. Keep it specific, factual, and forward-looking.</div>
+      </div>
+      <div class="card audience-card" data-audience="vendor">
+        <div class="card-header"><div><div class="card-title">🏭 Vendor Communication</div><div class="card-subtitle">Firm, professional, documented</div></div><span class="badge badge-blue">Intermediate</span></div>
+        <div class="framework-card">
+          <div class="framework-title">3C Vendor Message Model</div>
+          <ul class="framework-steps">
+            <li><strong>C</strong>ontext — Restate the agreement or expectation clearly</li>
+            <li><strong>C</strong>oncern — State what was missed or at risk</li>
+            <li><strong>C</strong>ommitment — Ask for a specific commitment with a date</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card audience-card" data-audience="junior">
+        <div class="card-header"><div><div class="card-title">🌱 Junior CSR Communication</div><div class="card-subtitle">Lead by example, build with clarity</div></div><span class="badge badge-green">Core</span></div>
+        <div class="framework-card">
+          <div class="framework-title">Delegation Message Template</div>
+          <ul class="framework-steps">
+            <li>"I need [specific output] by [date and time]."</li>
+            <li>"You own this — here's what success looks like: [criteria]."</li>
+            <li>"If you hit a blocker, flag me by [checkpoint], not after the deadline."</li>
+            <li>"Any questions before you start?"</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEADERSHIP ACADEMY -->
+  <div class="tab-pane" id="learn-tab-leadership">
+    <div class="grid-3">
+      <div class="module-card" onclick="openModuleModal('Ownership Framework','ownership')">
+        <div class="module-icon">🏛️</div><div class="module-title">Ownership Framework</div>
+        <div class="module-desc">Define, claim, and execute on your scope without being assigned every detail. Move from reactive to proactive ownership.</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;"><div class="progress-bar" style="flex:1;margin-right:10px;"><div class="progress-fill green" style="width:100%"></div></div><span class="badge badge-green">Done</span></div>
+      </div>
+      <div class="module-card" onclick="openModuleModal('Accountability Conversations','accountability')">
+        <div class="module-icon">⚖️</div><div class="module-title">Accountability Conversations</div>
+        <div class="module-desc">Have difficult conversations that hold standards without damaging relationships. Learn when to address issues and how.</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;"><div class="progress-bar" style="flex:1;margin-right:10px;"><div class="progress-fill" style="width:75%"></div></div><span class="badge badge-accent">75%</span></div>
+      </div>
+      <div class="module-card" onclick="openModuleModal('Delegation Training','delegation')">
+        <div class="module-icon">🔀</div><div class="module-title">Delegation Training</div>
+        <div class="module-desc">Delegate with clarity — define scope, set expectations, build checkpoints, and maintain accountability without micromanaging.</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;"><div class="progress-bar" style="flex:1;margin-right:10px;"><div class="progress-fill amber" style="width:40%"></div></div><span class="badge badge-amber">40%</span></div>
+      </div>
+      <div class="module-card" onclick="openModuleModal('Meeting Facilitation','facilitation')">
+        <div class="module-icon">🎙️</div><div class="module-title">Meeting Facilitation</div>
+        <div class="module-desc">Run tighter meetings with clear agendas, active facilitation, and documented outcomes that people actually follow through on.</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;"><div class="progress-bar" style="flex:1;margin-right:10px;"><div class="progress-fill" style="width:0%"></div></div><span class="badge badge-muted">Not Started</span></div>
+      </div>
+      <div class="module-card" onclick="openModuleModal('Escalation Framework','escalation')">
+        <div class="module-icon">🚨</div><div class="module-title">Escalation Framework</div>
+        <div class="module-desc">Know exactly when, how, and to whom to escalate. Protect your relationships and credibility while resolving issues faster.</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;"><div class="progress-bar" style="flex:1;margin-right:10px;"><div class="progress-fill green" style="width:100%"></div></div><span class="badge badge-green">Done</span></div>
+      </div>
+      <div class="module-card" style="opacity:0.45;pointer-events:none;">
+        <div class="module-icon">🔒</div><div class="module-title">Performance Conversations</div>
+        <div class="module-desc">Unlocks at Week 7. Structured frameworks for giving feedback that changes behavior, not just compliance.</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;"><div class="progress-bar" style="flex:1;margin-right:10px;"><div class="progress-fill" style="width:0%"></div></div><span class="badge badge-muted">Week 7</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUSINESS THINKING -->
+  <div class="tab-pane" id="learn-tab-business">
+    <div class="grid-2 section-gap">
+      <div class="card">
+        <div class="card-header"><div class="card-title">📋 Prioritization Framework</div><span class="badge badge-green">Done</span></div>
+        <div class="framework-card" style="margin-bottom:14px;">
+          <div class="framework-title">ICE Scoring Model</div>
+          <ul class="framework-steps">
+            <li><strong>I</strong>mpact — How much will this move the needle? (1–10)</li>
+            <li><strong>C</strong>onfidence — How sure are we this will work? (1–10)</li>
+            <li><strong>E</strong>ase — How easy is it to execute? (1–10)</li>
+            <li>Final score = (I × C × E) / 100 → Rank and decide</li>
+          </ul>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);">Mini-assessment score: <strong style="color:var(--green)">94/100</strong></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">⚠️ Risk Detection Framework</div><span class="badge badge-amber">In Progress</span></div>
+        <div class="framework-card">
+          <div class="framework-title">TIER Risk Classification</div>
+          <ul class="framework-steps">
+            <li><strong>T1 — Handle Now:</strong> Customer impact, revenue risk, SLA breach</li>
+            <li><strong>T2 — Handle Today:</strong> Process gap, team blocker, escalation signal</li>
+            <li><strong>T3 — Monitor:</strong> Emerging pattern, not yet breaking</li>
+            <li><strong>T4 — Log:</strong> Low signal, no immediate action needed now</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🌐 Stakeholder Mapping</div><span class="badge badge-accent">Active</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div style="background:var(--bg-card);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);text-align:center;"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Decision Maker</div><div style="font-size:13px;font-weight:700;">CEO / VP</div></div>
+          <div style="background:var(--bg-card);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);text-align:center;"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Approver</div><div style="font-size:13px;font-weight:700;">Director</div></div>
+          <div style="background:var(--bg-card);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);text-align:center;"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Influencer</div><div style="font-size:13px;font-weight:700;">Senior Lead</div></div>
+          <div style="background:var(--accent-dim);padding:10px;border-radius:var(--radius-sm);border:1px solid rgba(99,102,241,0.2);text-align:center;"><div style="font-size:10px;color:var(--accent);text-transform:uppercase;margin-bottom:4px;">You</div><div style="font-size:13px;font-weight:700;">Executor</div></div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="showPage('aitools',document.querySelector('[onclick*=aitools]'));setTimeout(()=>switchTabById('ai-tab-stakeholder'),150)">Open Stakeholder Mapper →</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🔍 Root Cause Analysis</div><span class="badge badge-muted">Not Started</span></div>
+        <div class="framework-card">
+          <div class="framework-title">5 Whys Method</div>
+          <ul class="framework-steps">
+            <li>State the problem clearly and specifically</li>
+            <li>Ask "Why did this happen?" — record the answer</li>
+            <li>Ask why again about that answer — repeat × 5</li>
+            <li>The 5th "why" is typically the root cause</li>
+            <li>Design the fix at the root, not the symptom</li>
+          </ul>
+        </div>
+        <div style="margin-top:12px;"><button class="btn btn-secondary btn-sm" onclick="showPage('aitools',document.querySelector('[onclick*=aitools]'));setTimeout(()=>switchTabById('ai-tab-rca'),150)">Open RCA Assistant →</button></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📊 Business Metrics</div><span class="badge badge-accent">Active</span></div>
+        <div class="framework-card">
+          <div class="framework-title">Key Metrics a CSR Lead Should Know</div>
+          <ul class="framework-steps">
+            <li>CSAT / NPS — Customer sentiment and loyalty indicators</li>
+            <li>FCR (First Contact Resolution) — Efficiency benchmark</li>
+            <li>AHT (Average Handle Time) — Productivity signal</li>
+            <li>SLA Adherence Rate — Commitment compliance</li>
+            <li>Escalation Rate — Team competency signal</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🔄 WBR Training</div><span class="badge badge-muted">Not Started</span></div>
+        <div class="framework-card">
+          <div class="framework-title">Weekly Business Review Structure</div>
+          <ul class="framework-steps">
+            <li>Open with prior week's scorecard vs. target</li>
+            <li>Surface 1–2 root causes for misses (not excuses)</li>
+            <li>Present corrective action with owner and due date</li>
+            <li>Flag risks to next week's performance proactively</li>
+            <li>Close with one metric to watch this week</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== PRACTICE PAGE ====== -->
+<div class="page" id="page-practice">
+  <div class="page-header"><div class="page-title">Practice</div><div class="page-subtitle">Active exercises, simulations, and leadership scenarios</div></div>
+  <div class="tab-group">
+    <button class="tab-btn active" onclick="switchTab('practice','drills',this)">💬 Communication Drills</button>
+    <button class="tab-btn" onclick="switchTab('practice','leadership',this)">🧭 Leadership Scenarios</button>
+    <button class="tab-btn" onclick="switchTab('practice','initiative',this)">💡 Initiative Lab</button>
+    <button class="tab-btn" onclick="switchTab('practice','tickets',this)">🎫 Ticket Simulation</button>
+  </div>
+
+  <!-- DRILLS -->
+  <div class="tab-pane active" id="practice-tab-drills">
+    <div class="grid-21">
+      <div>
+        <div class="scenario-card">
+          <div class="scenario-header">
+            <div><div class="scenario-title">Executive Escalation — Missed SLA</div><div style="font-size:12px;color:var(--text-muted);margin-top:3px;">Exercise #EP-047 · Due Friday</div></div>
+            <span class="badge badge-amber">⚡ Hard</span>
+          </div>
+          <div class="scenario-tags">
+            <span class="badge badge-muted">Audience: VP of Operations</span>
+            <span class="badge badge-accent">Escalation</span>
+            <span class="badge badge-blue">Executive Summary</span>
+          </div>
+          <div class="scenario-body">
+            <strong>Situation:</strong> A key enterprise client (Apex Corp, $2.4M ARR) has missed their promised same-day delivery SLA for the third consecutive week. The client success team has been managing it at the team level, but the client has now escalated directly to your VP. You have 2 hours to prepare a briefing.<br><br>
+            <strong>Your task:</strong> Write a concise executive briefing (3 paragraphs max) covering what happened, current status, what's being done, and the recommended approach for the VP's call.
+          </div>
+          <div style="margin-bottom:10px;">
+            <label class="form-label">Your Response</label>
+            <textarea class="field-textarea" id="drill-response-1" style="min-height:130px;" placeholder="Write your executive briefing here. Remember: bottom line up front, data-backed, action-oriented."></textarea>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="submitDrill('drill-response-1','feedback-1')">Submit for AI Review</button>
+            <button class="btn btn-ghost btn-sm" onclick="fillSample('drill-response-1')">Show sample response</button>
+          </div>
+        </div>
+        <div class="ai-feedback" id="feedback-1" style="display:none;">
+          <div class="ai-feedback-header">🤖 AI Communication Coach — Feedback</div>
+          <div class="score-grid">
+            <div class="score-item"><div class="score-num high">88</div><div class="score-name">Clarity</div></div>
+            <div class="score-item"><div class="score-num high">82</div><div class="score-name">Authority</div></div>
+            <div class="score-item"><div class="score-num mid">74</div><div class="score-name">Ownership</div></div>
+            <div class="score-item"><div class="score-num high">91</div><div class="score-name">Audience Fit</div></div>
+            <div class="score-item"><div class="score-num mid">77</div><div class="score-name">Escalation</div></div>
+          </div>
+          <div style="margin-bottom:10px;">
+            <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:6px;">✅ Strengths</div>
+            <div class="feedback-li"><span class="feedback-dot" style="background:var(--green)"></span>BLUF structure strong — VP can grasp the situation in sentence 1</div>
+            <div class="feedback-li"><span class="feedback-dot" style="background:var(--green)"></span>Specific data included ($2.4M ARR, 3-week pattern) — executive-ready framing</div>
+            <div class="feedback-li"><span class="feedback-dot" style="background:var(--green)"></span>Tone is appropriately direct without being alarmist</div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:6px;">⚠️ Areas to Improve</div>
+            <div class="feedback-li"><span class="feedback-dot" style="background:var(--amber)"></span>Missing a clear recommendation — VP needs to know your proposed approach, not just the situation</div>
+            <div class="feedback-li"><span class="feedback-dot" style="background:var(--amber)"></span>Ownership language is passive ("the team has been managing it") — own it directly</div>
+          </div>
+          <div style="background:var(--bg-panel);border-radius:var(--radius-sm);padding:12px;border:1px solid var(--border);">
+            <div style="font-size:12px;font-weight:700;color:var(--accent-hover);margin-bottom:8px;">💡 Suggested Addition</div>
+            <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;font-style:italic;">"Recommendation: I suggest opening the call with an acknowledgment of the pattern, not just the incident — this signals to Apex that we see the systemic issue. I'm available to join the call to provide operational context if needed, and will have a root-cause brief ready in 60 minutes."</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">Drill Library</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--green-dim);border-radius:var(--radius-sm);"><span style="font-size:12px;font-weight:600;color:var(--green);">✅ Chat Responses</span><span style="font-size:11px;color:var(--green);">4/4</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--accent-dim);border-radius:var(--radius-sm);"><span style="font-size:12px;font-weight:600;color:var(--accent-hover);">▶️ Escalation Messages</span><span style="font-size:11px;color:var(--accent);">1/3</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border);"><span style="font-size:12px;font-weight:500;color:var(--text-secondary);">Customer Updates</span><span style="font-size:11px;color:var(--text-muted);">0/3</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border);"><span style="font-size:12px;font-weight:500;color:var(--text-secondary);">Internal Updates</span><span style="font-size:11px;color:var(--text-muted);">0/2</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border);"><span style="font-size:12px;font-weight:500;color:var(--text-secondary);">Conflict Responses</span><span style="font-size:11px;color:var(--text-muted);">0/2</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border);"><span style="font-size:12px;font-weight:500;color:var(--text-secondary);">Executive Summaries</span><span style="font-size:11px;color:var(--text-muted);">0/2</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">This Week's Scores</div>
+          <div class="progress-wrap"><div class="progress-header"><span class="progress-label">Clarity</span><span class="progress-value">88</span></div><div class="progress-bar"><div class="progress-fill" style="width:88%"></div></div></div>
+          <div class="progress-wrap"><div class="progress-header"><span class="progress-label">Authority</span><span class="progress-value">82</span></div><div class="progress-bar"><div class="progress-fill" style="width:82%"></div></div></div>
+          <div class="progress-wrap"><div class="progress-header"><span class="progress-label">Audience Fit</span><span class="progress-value">91</span></div><div class="progress-bar"><div class="progress-fill green" style="width:91%"></div></div></div>
+          <div class="progress-wrap"><div class="progress-header"><span class="progress-label">Ownership Language</span><span class="progress-value">74</span></div><div class="progress-bar"><div class="progress-fill amber" style="width:74%"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEADERSHIP SCENARIOS -->
+  <div class="tab-pane" id="practice-tab-leadership">
+    <div class="scenario-card">
+      <div class="scenario-header">
+        <div><div class="scenario-title">Missed Deadline — Repeated Pattern</div><div style="font-size:12px;color:var(--text-muted);margin-top:3px;">Leadership Scenario #LS-019 · Accountability Conversation</div></div>
+        <span class="badge badge-red">🔥 High Stakes</span>
+      </div>
+      <div class="scenario-tags"><span class="badge badge-muted">Skill: Accountability</span><span class="badge badge-amber">Delegation</span><span class="badge badge-blue">Performance</span></div>
+      <div class="scenario-body">
+        <strong>Background:</strong> Jordan is a junior CSR you've been informally leading for 4 weeks. This is the third time in two weeks that Jordan has submitted client updates 30–45 minutes late without proactively communicating the delay. Last week you mentioned it casually but the pattern has continued.<br><br>
+        <strong>This week:</strong> Jordan missed the 4 PM Apex Corp update again. The client flagged it. Your manager saw the client's message before you did.<br><br>
+        <strong>Your task:</strong> Write what you would say to Jordan in your coaching conversation today. Address the pattern directly. Be specific. Include your expectation going forward and what accountability looks like.
+      </div>
+      <div style="margin-bottom:10px;">
+        <label class="form-label">Your Coaching Response</label>
+        <textarea class="field-textarea" id="leadership-response-1" style="min-height:140px;" placeholder="'Jordan, I need to be direct with you about something I've been observing...'"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="submitLeadership('leadership-response-1','leadership-feedback-1')">Submit for Assessment</button>
+    </div>
+    <div class="ai-feedback" id="leadership-feedback-1" style="display:none;">
+      <div class="ai-feedback-header">🤖 AI Leadership Coach — Assessment</div>
+      <div class="score-grid">
+        <div class="score-item"><div class="score-num mid">79</div><div class="score-name">Directness</div></div>
+        <div class="score-item"><div class="score-num high">85</div><div class="score-name">Empathy</div></div>
+        <div class="score-item"><div class="score-num mid">71</div><div class="score-name">Accountability</div></div>
+        <div class="score-item"><div class="score-num high">88</div><div class="score-name">Clarity</div></div>
+      </div>
+      <div style="margin-bottom:10px;"><div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:6px;">Risk Analysis</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">⚠️ Being too empathetic without naming the specific business consequence risks Jordan not fully understanding the seriousness. Name the client impact explicitly — Jordan needs to connect their behavior to the business outcome.</div></div>
+      <div><div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:6px;">Alternative Approaches</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;margin-bottom:6px;"><strong>Approach 1 (Recommended):</strong> Open with the impact first — "The Apex client escalated because of the missed update. My manager was informed before I was. I need to walk you through why that's a problem and what changes today."</div>
+        <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;"><strong>Approach 2 (Diagnostic):</strong> Ask first — "I've noticed this pattern three times now. Before I share what I see, tell me what's been getting in the way." — Good if you suspect a systemic issue, but don't use it to avoid the direct conversation.</div>
+      </div>
+    </div>
+    <div style="margin-top:20px;" class="grid-3">
+      <div class="scenario-card" style="margin-bottom:0;cursor:pointer;">
+        <div class="scenario-title" style="margin-bottom:6px;">Delegation Gone Wrong</div>
+        <div class="scenario-body" style="font-size:12px;margin-bottom:10px;">You delegated a task, gave no check-in, and it came back wrong two days before the deadline. How do you address it without burning the relationship?</div>
+        <span class="badge badge-muted">Delegation · Medium</span>
+      </div>
+      <div class="scenario-card" style="margin-bottom:0;cursor:pointer;">
+        <div class="scenario-title" style="margin-bottom:6px;">Stakeholder Conflict</div>
+        <div class="scenario-body" style="font-size:12px;margin-bottom:10px;">Two stakeholders have conflicting priorities for the same resource. You own the execution. You can't give both what they want. What do you do?</div>
+        <span class="badge badge-red">Escalation · Hard</span>
+      </div>
+      <div class="scenario-card" style="margin-bottom:0;cursor:pointer;">
+        <div class="scenario-title" style="margin-bottom:6px;">Team Morale Drop</div>
+        <div class="scenario-body" style="font-size:12px;margin-bottom:10px;">Two team members seem disengaged after last week's reorg announcement. Address it before it spreads to the rest of the team.</div>
+        <span class="badge badge-accent">People · Medium</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- INITIATIVE LAB -->
+  <div class="tab-pane" id="practice-tab-initiative">
+    <div class="grid-2 section-gap">
+      <div class="card">
+        <div class="card-header"><div class="card-title">🔍 Problem Discovery Track</div><span class="badge badge-amber">Active</span></div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6;">Identify a real problem in your current work context. Structure your finding the way a lead would present it to a manager.</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div><label class="form-label">Problem Statement</label><textarea class="field-textarea" style="min-height:60px;" placeholder="What is broken, missing, or inefficient? Be as specific as possible."></textarea></div>
+          <div><label class="form-label">Evidence (Data, Examples, Frequency)</label><textarea class="field-textarea" style="min-height:60px;" placeholder="What data or pattern supports this? How often does it happen?"></textarea></div>
+          <div><label class="form-label">Access or Resources Needed</label><textarea class="field-textarea" style="min-height:50px;" placeholder="What do you need to investigate or fix this?"></textarea></div>
+          <div><label class="form-label">People Involved</label><textarea class="field-textarea" style="min-height:50px;" placeholder="Who owns this area? Who is affected?"></textarea></div>
+          <div><label class="form-label">Recommendation</label><textarea class="field-textarea" style="min-height:60px;" placeholder="What do you recommend? Be specific — a tool, a process change, an owner change?"></textarea></div>
+          <div><label class="form-label">Escalation Trigger</label><textarea class="field-textarea" style="min-height:50px;" placeholder="At what point does this need manager involvement?"></textarea></div>
+          <button class="btn btn-primary">Submit to Manager for Review</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">⚙️ Process Optimization Track</div><span class="badge badge-muted">Not Started</span></div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6;">Identify a process inefficiency and structure a business case for improving it with measurable outcomes.</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div><label class="form-label">Inefficiency Identified</label><textarea class="field-textarea" style="min-height:60px;" placeholder="What is the current inefficient process?"></textarea></div>
+          <div><label class="form-label">Root Cause</label><textarea class="field-textarea" style="min-height:50px;" placeholder="Why does this inefficiency exist?"></textarea></div>
+          <div><label class="form-label">Proposed Improvement</label><textarea class="field-textarea" style="min-height:60px;" placeholder="What specific change do you propose?"></textarea></div>
+          <div><label class="form-label">Success Metric</label><textarea class="field-textarea" style="min-height:50px;" placeholder="How will you know it's working? Time saved, error rate, response time?"></textarea></div>
+          <div><label class="form-label">Expected Outcome (30 days)</label><textarea class="field-textarea" style="min-height:50px;" placeholder="What does success look like in 30 days?"></textarea></div>
+          <button class="btn btn-secondary">Save Draft</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TICKET SIMULATION -->
+  <div class="tab-pane" id="practice-tab-tickets">
+    <div class="grid-21">
+      <div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header"><div class="card-title">🎫 Inbox Simulation — Morning Triage</div><span class="badge badge-red">Live Drill</span></div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">You just started your shift. Prioritize, assign ownership, and draft responses. You have 20 minutes.</div>
+        </div>
+        <div class="ticket-card selected" id="ticket-1" onclick="selectTicket(1)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div><div class="ticket-id">#TKT-4892</div><div class="ticket-title">Apex Corp — Order delayed, customer threatening chargeback</div><div class="ticket-meta">📧 Customer Email · Received: 7:43 AM · SLA breach in 17 min</div></div>
+            <span class="badge badge-red">P1</span>
+          </div>
+        </div>
+        <div class="ticket-card" id="ticket-2" onclick="selectTicket(2)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div><div class="ticket-id">#SLK-291</div><div class="ticket-title">Jordan: "Hey, I can't access the client portal — what do I do?"</div><div class="ticket-meta">💬 Slack · From: Jordan (Junior CSR) · 8:01 AM</div></div>
+            <span class="badge badge-muted">P3</span>
+          </div>
+        </div>
+        <div class="ticket-card" id="ticket-3" onclick="selectTicket(3)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div><div class="ticket-id">#TKT-4887</div><div class="ticket-title">Vendor overcharge — invoice discrepancy $1,200 on last 3 orders</div><div class="ticket-meta">📧 Internal · From: Finance · Flagged yesterday</div></div>
+            <span class="badge badge-amber">P2</span>
+          </div>
+        </div>
+        <div class="ticket-card" id="ticket-4" onclick="selectTicket(4)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div><div class="ticket-id">#ESC-021</div><div class="ticket-title">Manager asking for update on Apex weekly report — due today</div><div class="ticket-meta">📧 Internal · From: Nicole (AD) · Due: 10 AM</div></div>
+            <span class="badge badge-blue">P2</span>
+          </div>
+        </div>
+        <div class="ticket-card" id="ticket-5" onclick="selectTicket(5)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div><div class="ticket-id">#TKT-4901</div><div class="ticket-title">New customer onboarding request — unclear brief, needs clarification</div><div class="ticket-meta">📧 Customer Email · Received: 8:12 AM · Non-urgent</div></div>
+            <span class="badge badge-muted">P3</span>
+          </div>
+        </div>
+        <div style="margin-top:16px;" class="card">
+          <div class="card-header"><div class="card-title">Selected: #TKT-4892 — Apex Corp</div><span class="badge badge-red">SLA Breach Imminent</span></div>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:14px;background:var(--bg-card);padding:12px;border-radius:var(--radius-sm);border:1px solid var(--border);">"This is unacceptable. My order was supposed to arrive yesterday and now your tracking says it's delayed AGAIN. I'm disputing this with my credit card company if I don't get a concrete answer in the next hour." — Apex Corp, David Reyes, Operations Director</div>
+          <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+            <div><label class="form-label">Escalate to</label><select class="field-select"><option>Handle myself</option><option>Manager (Nicole)</option><option selected>Fulfillment Team + Manager</option><option>Director level</option></select></div>
+            <div><label class="form-label">Priority</label><select class="field-select"><option selected>P1 — Immediate</option><option>P2 — Within 2h</option><option>P3 — Today</option></select></div>
+          </div>
+          <label class="form-label">Your Response to David Reyes</label>
+          <textarea class="field-textarea" style="min-height:100px;" placeholder="Write your customer response..."></textarea>
+          <div style="margin-top:10px;display:flex;gap:10px;">
+            <button class="btn btn-primary btn-sm">Submit Response</button>
+            <button class="btn btn-secondary btn-sm">Mark Escalated</button>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:10px;">Triage Guide</div>
+          <div class="framework-card">
+            <div class="framework-title">Priority Matrix</div>
+            <ul class="framework-steps">
+              <li><strong>P1</strong> — Customer impact + time-sensitive</li>
+              <li><strong>P2</strong> — Business risk, no current impact</li>
+              <li><strong>P3</strong> — Internal, delegate or schedule</li>
+              <li><strong>P4</strong> — Log, no action needed now</li>
+            </ul>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:10px;">Escalation Rules</div>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:2;">🔴 Revenue at risk → Escalate + handle in parallel<br>🟡 SLA breach → Notify manager, own resolution<br>🟢 Internal delay → Handle then update<br>⚫ New info needed → Don't escalate yet</div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:10px;">Session Progress</div>
+          <div class="progress-wrap"><div class="progress-header"><span class="progress-label">Items Triaged</span><span class="progress-value">1 / 5</span></div><div class="progress-bar"><div class="progress-fill amber" style="width:20%"></div></div></div>
+          <div style="font-size:12px;color:var(--text-muted);">Complete all 5 to receive your Triage Score</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== AI TOOLS PAGE ====== -->
+<div class="page" id="page-aitools">
+  <div class="page-header"><div class="page-title">AI Tools</div><div class="page-subtitle">AI-powered coaching, analysis, and decision support</div></div>
+  <div class="tab-group">
+    <button class="tab-btn active" onclick="switchTab('aitools','comm',this)">💬 Communication Coach</button>
+    <button class="tab-btn" onclick="switchTab('aitools','leadership',this)">🧭 Leadership Coach</button>
+    <button class="tab-btn" onclick="switchTab('aitools','rca',this)">🔍 RCA Assistant</button>
+    <button class="tab-btn" onclick="switchTab('aitools','stakeholder',this)">🌐 Stakeholder Mapper</button>
+  </div>
+
+  <!-- COMM COACH -->
+  <div class="tab-pane active" id="aitools-tab-comm">
+    <div class="grid-21">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:16px;">Communication Coach</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div><label class="form-label">Original Message / Context</label><textarea class="field-textarea" id="ai-original" style="min-height:80px;">Hi Nicole, just wanted to let you know that the Apex report has some issues. We're working on it and should hopefully have an update soon. Sorry for the delay.</textarea></div>
+          <div><label class="form-label">Audience Type</label><select class="field-select" style="width:100%;"><option>Executive / VP Level</option><option selected>Supervisor / Manager</option><option>Peer / Team</option><option>Customer</option><option>Technical Team</option><option>Vendor</option><option>Junior CSR</option></select></div>
+          <div><label class="form-label">Your Proposed Rewrite</label><textarea class="field-textarea" id="ai-proposed" style="min-height:100px;">Nicole — heads up on Apex. The weekly report is delayed due to a data discrepancy in the fulfillment export from yesterday. I'll have a corrected version to you by 11 AM. No action needed from your side yet — I'll flag you if anything changes.</textarea></div>
+          <button class="btn btn-primary" onclick="runCommCoach()">Analyze My Message</button>
+        </div>
+      </div>
+      <div id="comm-coach-output">
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-header"><div class="card-title">Score Breakdown</div><span class="badge badge-green">Overall: 86/100</span></div>
+          <div class="ai-score-bar-row"><div class="ai-score-bar-label">Clarity</div><div class="ai-score-bar-track"><div class="ai-score-bar-fill" style="width:92%;background:var(--green)"></div></div><div class="ai-score-bar-num" style="color:var(--green)">92</div></div>
+          <div class="ai-score-bar-row"><div class="ai-score-bar-label">Authority</div><div class="ai-score-bar-track"><div class="ai-score-bar-fill" style="width:88%;background:var(--accent)"></div></div><div class="ai-score-bar-num" style="color:var(--accent)">88</div></div>
+          <div class="ai-score-bar-row"><div class="ai-score-bar-label">Ownership</div><div class="ai-score-bar-track"><div class="ai-score-bar-fill" style="width:85%;background:var(--accent)"></div></div><div class="ai-score-bar-num" style="color:var(--accent)">85</div></div>
+          <div class="ai-score-bar-row"><div class="ai-score-bar-label">Audience Fit</div><div class="ai-score-bar-track"><div class="ai-score-bar-fill" style="width:91%;background:var(--green)"></div></div><div class="ai-score-bar-num" style="color:var(--green)">91</div></div>
+          <div class="ai-score-bar-row"><div class="ai-score-bar-label">Escalation Judgment</div><div class="ai-score-bar-track"><div class="ai-score-bar-fill" style="width:74%;background:var(--amber)"></div></div><div class="ai-score-bar-num" style="color:var(--amber)">74</div></div>
+        </div>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title" style="margin-bottom:10px;">✅ Strengths</div>
+          <div class="feedback-li"><span class="feedback-dot" style="background:var(--green)"></span><span style="color:var(--text-secondary)">Clear subject + ETA in sentence 1 — manager doesn't need to follow up</span></div>
+          <div class="feedback-li"><span class="feedback-dot" style="background:var(--green)"></span><span style="color:var(--text-secondary)">"No action needed from your side" — strong ownership signal, reduces noise</span></div>
+          <div class="feedback-li"><span class="feedback-dot" style="background:var(--green)"></span><span style="color:var(--text-secondary)">Calm tone models stability under pressure</span></div>
+        </div>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title" style="margin-bottom:10px;">⚠️ Areas to Improve</div>
+          <div class="feedback-li"><span class="feedback-dot" style="background:var(--amber)"></span><span style="color:var(--text-secondary)">Consider adding a contingency: what happens if it's not ready by 11?</span></div>
+          <div class="feedback-li"><span class="feedback-dot" style="background:var(--amber)"></span><span style="color:var(--text-secondary)">A brief note on what's in the corrected version would add context</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:10px;">💡 Suggested Rewrite</div>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;background:var(--bg-card);padding:12px;border-radius:var(--radius-sm);border:1px solid var(--border);">"Nicole — quick update on Apex. The weekly report is delayed because of a data discrepancy in yesterday's fulfillment export — I'm correcting it now and will have it to you by 11 AM with a short note flagging what was off. No action needed from your end. If I hit a blocker, I'll message you immediately."</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEADERSHIP COACH -->
+  <div class="tab-pane" id="aitools-tab-leadership">
+    <div class="grid-21">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:16px;">Leadership Coach</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div><label class="form-label">Situation Description</label><textarea class="field-textarea" id="lead-situation" style="min-height:100px;">One of my team members keeps submitting work late. I've mentioned it twice informally. It's now affecting a client relationship. I'm unsure how hard to push because this person is usually a good performer.</textarea></div>
+          <div><label class="form-label">Proposed Action / Approach</label><textarea class="field-textarea" id="lead-action" style="min-height:90px;">I'm thinking of sending a Slack message letting them know this needs to stop and asking them to be more careful going forward.</textarea></div>
+          <button class="btn btn-primary" onclick="runLeadCoach()">Get Leadership Assessment</button>
+        </div>
+      </div>
+      <div id="lead-coach-output">
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-header"><div class="card-title">Leadership Assessment</div><span class="badge badge-amber">Needs Refinement</span></div>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">Your instinct to address this is right. But Slack is too passive for a pattern-level conversation with client impact. This situation has escalated past a "heads up" — a Slack message without a direct conversation undercuts your authority and lets the behavior continue unchallenged.</div>
+        </div>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-header"><div class="card-title">Decision Quality</div><span class="badge badge-amber">64 / 100</span></div>
+          <div style="font-size:13px;color:var(--text-secondary);">Decision to act: correct (score: 90). Method chosen: weak for the situation severity (score: 38). Mismatched channel-to-severity lowers overall score significantly.</div>
+        </div>
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title" style="margin-bottom:10px;">Recommended Approach</div>
+          <ul class="framework-steps">
+            <li>Request a brief 1:1 — 15 min, today or tomorrow</li>
+            <li>Open with the business impact, not the behavior: "This delay affected the Apex account"</li>
+            <li>Name the pattern explicitly: "This is the third time in two weeks"</li>
+            <li>Ask them to explain — give space before deciding next steps</li>
+            <li>Set a clear, documented expectation with a specific accountability checkpoint</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:10px;">Escalation Advice</div>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">Don't escalate to manager yet. You have one clear step to take first. If behavior continues after a direct, documented conversation, that's when you loop in your manager — and you'll have a record of your attempt.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RCA ASSISTANT -->
+  <div class="tab-pane" id="aitools-tab-rca">
+    <div class="card" style="max-width:700px;">
+      <div class="card-header"><div class="card-title">🔍 Root Cause Analysis Assistant</div><span class="badge badge-accent">Guided 5-Whys</span></div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:20px;">Answer each question to drill down to the true root cause. Don't jump ahead — each answer drives the next question.</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div><label class="form-label">Problem Statement</label><textarea class="field-textarea" id="rca-problem" style="min-height:60px;" placeholder="What went wrong? Be as specific as possible.">The Apex Corp weekly report was delivered 2 hours late on three consecutive Fridays.</textarea></div>
+        <div style="padding:12px;background:var(--accent-dim);border-radius:var(--radius-sm);border:1px solid rgba(99,102,241,0.2);">
+          <div style="font-size:12px;font-weight:700;color:var(--accent-hover);margin-bottom:6px;">Why #1 — Why did this happen?</div>
+          <textarea class="field-textarea" id="rca-why1" style="min-height:60px;" placeholder="First 'why'...">The data export from the fulfillment system was running late each time.</textarea>
+        </div>
+        <div style="padding:12px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border);">
+          <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">Why #2 — Why was the data export late?</div>
+          <textarea class="field-textarea" id="rca-why2" style="min-height:60px;" placeholder="Keep asking why...">No one owned the export task — it was assumed automatic but required a manual trigger.</textarea>
+        </div>
+        <div style="padding:12px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border);">
+          <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">Why #3 — Why did no one know it was manual?</div>
+          <textarea class="field-textarea" id="rca-why3" style="min-height:60px;" placeholder="Go deeper..."></textarea>
+        </div>
+        <div style="padding:12px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border);">
+          <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">Why #4</div>
+          <textarea class="field-textarea" id="rca-why4" style="min-height:60px;" placeholder="Continue..."></textarea>
+        </div>
+        <div style="padding:12px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border);">
+          <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">Why #5 — Root Cause</div>
+          <textarea class="field-textarea" id="rca-why5" style="min-height:60px;" placeholder="The true root cause..."></textarea>
+        </div>
+        <div><label class="form-label">Proposed Fix (Address the Root)</label><textarea class="field-textarea" id="rca-fix" style="min-height:70px;" placeholder="What is the systemic fix that addresses the root cause, not just the symptom?"></textarea></div>
+        <button class="btn btn-primary" onclick="submitRCA()">Submit RCA for AI Analysis</button>
+        <div id="rca-output" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAKEHOLDER MAPPER -->
+  <div class="tab-pane" id="aitools-tab-stakeholder">
+    <div class="card" style="max-width:680px;margin-bottom:20px;">
+      <div class="card-title" style="margin-bottom:12px;">Map Your Stakeholders</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        <div style="flex:1;min-width:200px;"><label class="form-label">Initiative / Project</label><input class="form-input" id="sm-initiative" value="Apex Corp Retention Plan" type="text"></div>
+        <div style="flex:1;min-width:200px;"><label class="form-label">Department</label><input class="form-input" id="sm-dept" value="Client Success" type="text"></div>
+      </div>
+      <div style="margin-bottom:12px;"><label class="form-label">Context (optional)</label><input class="form-input" id="sm-context" placeholder="e.g. ecommerce brand, SLA issue, cross-functional initiative…" type="text"></div>
+      <button class="btn btn-primary btn-sm" onclick="generateStakeholderMap()">Generate Live Stakeholder Map</button>
+    </div>
+    <div id="stakeholder-map-output" style="display:none;max-width:680px;"></div>
+    <div class="stakeholder-map" id="stakeholder-map-default">
+      <div class="stakeholder-node"><div class="sn-role">Influencer</div><div class="sn-name">David Reyes</div><div class="sn-dept">Apex Corp Ops</div></div>
+      <div class="stakeholder-node"><div class="sn-role">Decision Maker</div><div class="sn-name">VP of Sales</div><div class="sn-dept">Internal</div></div>
+      <div class="stakeholder-node"><div class="sn-role">Approver</div><div class="sn-name">Nicole Cruz</div><div class="sn-dept">Account Direction</div></div>
+      <div class="stakeholder-node"><div class="sn-role">Observer</div><div class="sn-name">Finance Team</div><div class="sn-dept">Internal</div></div>
+      <div class="stakeholder-node center"><div class="sn-role">Executor (You)</div><div class="sn-name">Maria Santos</div><div class="sn-dept">CSR Lead</div></div>
+      <div class="stakeholder-node"><div class="sn-role">Observer</div><div class="sn-name">Apex C-Suite</div><div class="sn-dept">Apex Corp</div></div>
+      <div class="stakeholder-node"><div class="sn-role">Executor</div><div class="sn-name">Jordan Lee</div><div class="sn-dept">Junior CSR</div></div>
+      <div class="stakeholder-node"><div class="sn-role">Executor</div><div class="sn-name">Fulfillment Team</div><div class="sn-dept">Operations</div></div>
+      <div class="stakeholder-node"><div class="sn-role">Influencer</div><div class="sn-name">Legal / Compliance</div><div class="sn-dept">Internal</div></div>
+    </div>
+    <div style="margin-top:14px;font-size:12px;color:var(--text-secondary);">💡 Tip: Your highest-priority communication paths are Decision Maker → Approver → Executor. Observer stakeholders get FYI-only updates.</div>
+  </div>
+</div>
+
+<!-- ====== DECISION CENTER PAGE ====== -->
+<div class="page" id="page-decisions">
+  <div class="page-header"><div class="page-title">Decision Center</div><div class="page-subtitle">Build judgment through structured decision logging and weekly reflection</div></div>
+  <div class="tab-group">
+    <button class="tab-btn active" onclick="switchTab('decisions','tracker',this)">⚖️ Decision Tracker</button>
+    <button class="tab-btn" onclick="switchTab('decisions','journal',this)">📓 Leadership Journal</button>
+  </div>
+
+  <div class="tab-pane active" id="decisions-tab-tracker">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:13px;color:var(--text-secondary);">8 decisions logged across 5 weeks</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('decision-modal')">+ Log New Decision</button>
+    </div>
+    <div class="decision-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Week 5 · June 18, 2025</div><div style="font-size:14px;font-weight:700;">Escalate Apex SLA issue to Director level or handle at account level?</div></div>
+        <span class="badge badge-green">✓ Good Outcome</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;">
+        <div><span style="color:var(--text-muted);">Options considered:</span><div style="color:var(--text-secondary);margin-top:3px;">1. Handle internally, 2. Loop in Nicole, 3. Escalate with root cause brief</div></div>
+        <div><span style="color:var(--text-muted);">Decision made:</span><div style="color:var(--text-secondary);margin-top:3px;">Option 2 — Looped in Nicole with a briefing note, stayed on execution</div></div>
+        <div><span style="color:var(--text-muted);">Outcome:</span><div style="color:var(--green);margin-top:3px;">Apex retained. Nicole appreciated the proactive communication.</div></div>
+        <div><span style="color:var(--text-muted);">Lesson learned:</span><div style="color:var(--text-secondary);margin-top:3px;">When in doubt about escalation level, inform up one level while continuing to own — never drop the ball while escalating.</div></div>
+      </div>
+    </div>
+    <div class="decision-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Week 4 · June 11, 2025</div><div style="font-size:14px;font-weight:700;">Address Jordan's repeated lateness now vs. wait one more week?</div></div>
+        <span class="badge badge-amber">⚠️ Partial Miss</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;">
+        <div><span style="color:var(--text-muted);">Decision made:</span><div style="color:var(--text-secondary);margin-top:3px;">Waited — gave it "one more chance" with an informal mention</div></div>
+        <div><span style="color:var(--text-muted);">Outcome:</span><div style="color:var(--red);margin-top:3px;">Behavior continued. Apex client noticed. Manager saw it before I did.</div></div>
+        <div style="grid-column:1/-1;"><span style="color:var(--text-muted);">Lesson learned:</span><div style="color:var(--text-secondary);margin-top:3px;">When a pattern is established (2+ occurrences), informal mentions aren't enough. A documented conversation with a clear expectation is the minimum required response — not an optional step.</div></div>
+      </div>
+    </div>
+    <div class="decision-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div><div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Week 3 · June 4, 2025</div><div style="font-size:14px;font-weight:700;">Bring vendor invoice issue to Finance directly or route through manager?</div></div>
+        <span class="badge badge-green">✓ Good Outcome</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;">
+        <div><span style="color:var(--text-muted);">Decision made:</span><div style="color:var(--text-secondary);margin-top:3px;">Went directly to Finance with a summary note, cc'd Nicole</div></div>
+        <div><span style="color:var(--text-muted);">Outcome:</span><div style="color:var(--green);margin-top:3px;">Finance resolved in 24h. Nicole noted good cross-functional ownership.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-pane" id="decisions-tab-journal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:13px;color:var(--text-secondary);">5 entries completed</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('journal-modal')">+ New Entry — Week 5</button>
+    </div>
+    <div class="journal-entry" style="border-left:3px solid var(--accent);">
+      <div class="journal-week">Week 4 · June 9–13, 2025</div>
+      <div class="journal-quadrant">
+        <div><div class="journal-q-label">🏆 Biggest Win</div><div class="journal-q-text">The Apex briefing I submitted to Nicole got used almost verbatim in the client call. She told me it was the most structured escalation summary she'd seen from the team this quarter.</div></div>
+        <div><div class="journal-q-label">❌ Biggest Mistake</div><div class="journal-q-text">Waited too long to address Jordan's late submissions. By the time the client noticed, I'd lost the window to handle it internally. Should have acted after the second miss, not the third.</div></div>
+        <div><div class="journal-q-label">💡 Biggest Learning</div><div class="journal-q-text">Being kind and being clear are not opposites. I kept softening the Jordan conversation out of kindness, but unclear expectations aren't kind — they set people up to fail.</div></div>
+        <div><div class="journal-q-label">🎯 Next Improvement</div><div class="journal-q-text">This week I will practice delegation with explicit accountability language — "By [date], I expect [specific output]. If there's a blocker, flag me by [checkpoint]. Agreed?"</div></div>
+      </div>
+    </div>
+    <div class="journal-entry">
+      <div class="journal-week">Week 3 · June 2–6, 2025</div>
+      <div class="journal-quadrant">
+        <div><div class="journal-q-label">🏆 Biggest Win</div><div class="journal-q-text">Identified the vendor invoice discrepancy before Finance caught it. Drafted the summary, routed it correctly, resolved in under 24 hours.</div></div>
+        <div><div class="journal-q-label">❌ Biggest Mistake</div><div class="journal-q-text">Wrote an update email to a VP that was three paragraphs when one would have done it. Got feedback that executives don't need context — they need the call to action.</div></div>
+        <div><div class="journal-q-label">💡 Biggest Learning</div><div class="journal-q-text">BLUF isn't just a writing technique — it's a mindset. Before writing anything to a senior stakeholder, I need to be able to state the main point out loud in one sentence first.</div></div>
+        <div><div class="journal-q-label">🎯 Next Improvement</div><div class="journal-q-text">Apply BLUF to every executive-facing communication this week. Read it out loud first: can they take action from sentence 1?</div></div>
+      </div>
+    </div>
+    <div class="journal-entry">
+      <div class="journal-week">Week 2 · May 26–30, 2025</div>
+      <div class="journal-quadrant">
+        <div><div class="journal-q-label">🏆 Biggest Win</div><div class="journal-q-text">Facilitated my first informal team standup. Kept it to 8 minutes. Two action items were assigned with clear owners. Everyone knew what was happening.</div></div>
+        <div><div class="journal-q-label">❌ Biggest Mistake</div><div class="journal-q-text">Took on a task that should have been delegated to Jordan because I thought it would be faster to do myself. It wasn't — and Jordan lost a learning opportunity.</div></div>
+        <div><div class="journal-q-label">💡 Biggest Learning</div><div class="journal-q-text">Speed isn't always efficiency. Doing things yourself to save time today costs your team's development and your own bandwidth next week.</div></div>
+        <div><div class="journal-q-label">🎯 Next Improvement</div><div class="journal-q-text">Before picking up any task: "Is this mine to own, or mine to delegate?" — if it's the latter, assign it with clear instructions before touching it.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== PERFORMANCE PAGE ====== -->
+<div class="page" id="page-performance">
+  <div class="page-header">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div><div class="page-title">Performance</div><div class="page-subtitle">Weekly review, skill heatmap, and promotion readiness tracker</div></div>
+      <span class="readiness-badge emerging">⚡ Emerging Lead</span>
+    </div>
+  </div>
+  <div class="tab-group">
+    <button class="tab-btn active" onclick="switchTab('performance','weekly',this)">📋 Weekly Review</button>
+    <button class="tab-btn" onclick="switchTab('performance','heatmap',this)">🔥 Skill Heatmap</button>
+    <button class="tab-btn" onclick="switchTab('performance','promo',this)">🚀 Promotion Readiness</button>
+  </div>
+
+  <!-- WEEKLY REVIEW -->
+  <div class="tab-pane active" id="performance-tab-weekly">
+    <div class="grid-4 section-gap">
+      <div class="stat-card"><div class="stat-label">Completion Rate</div><div class="stat-value" style="color:var(--accent)">84%</div><div class="stat-change up">↑ +4% WoW</div></div>
+      <div class="stat-card"><div class="stat-label">Communication Avg</div><div class="stat-value" style="color:var(--green)">88</div><div class="stat-change up">↑ +3 pts</div></div>
+      <div class="stat-card"><div class="stat-label">Leadership Score</div><div class="stat-value" style="color:var(--amber)">74</div><div class="stat-change up">↑ +6 pts</div></div>
+      <div class="stat-card"><div class="stat-label">Initiative Score</div><div class="stat-value" style="color:var(--accent)">81</div><div class="stat-change up">↑ +2 pts</div></div>
+    </div>
+    <div class="grid-21 section-gap">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Score Trend — Past 5 Weeks</div></div>
+        <div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--accent)"><div style="width:14px;height:3px;background:var(--accent);border-radius:3px"></div>Communication</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--amber)"><div style="width:14px;height:3px;background:var(--amber);border-radius:3px"></div>Leadership</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green)"><div style="width:14px;height:3px;background:var(--green);border-radius:3px"></div>Initiative</div>
+        </div>
+        <canvas id="trend-chart" height="180"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Manager Notes — Week 5</div><span class="badge badge-green">Reviewed</span></div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div><div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Ownership</div><div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">Solid improvement. The Apex escalation brief showed she's thinking ahead of problems, not just reacting to them.</div></div>
+          <div><div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Area to Develop</div><div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">Delegation language. Still using "Can you help with X" instead of "I need X done by Y date. You own this."</div></div>
+          <div><div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Next Week Focus</div><div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">One real delegation with explicit accountability language. Log how it goes in the journal.</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Submission History</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Exercise</th><th>Type</th><th>Submitted</th><th>Comm Score</th><th>Leadership</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Executive Briefing — Apex SLA</td><td><span class="badge badge-accent">Escalation</span></td><td>Jun 18</td><td style="color:var(--green);font-weight:700">91</td><td style="color:var(--green);font-weight:700">88</td><td><span class="badge badge-green">Reviewed</span></td></tr>
+            <tr><td>Vendor Conflict Response</td><td><span class="badge badge-blue">Communication</span></td><td>Jun 17</td><td style="color:var(--accent);font-weight:700">84</td><td style="color:var(--text-muted)">—</td><td><span class="badge badge-green">Reviewed</span></td></tr>
+            <tr><td>Missed Deadline Coaching Scenario</td><td><span class="badge badge-amber">Leadership</span></td><td>Jun 19</td><td style="color:var(--text-muted)">—</td><td style="color:var(--amber);font-weight:700">74</td><td><span class="badge badge-amber">In Review</span></td></tr>
+            <tr><td>Week 4 Journal Entry</td><td><span class="badge badge-muted">Reflection</span></td><td>Jun 13</td><td style="color:var(--text-muted)">—</td><td style="color:var(--text-muted)">—</td><td><span class="badge badge-green">Approved</span></td></tr>
+            <tr><td>Apex RCA Submission</td><td><span class="badge badge-red">RCA</span></td><td>Jun 12</td><td style="color:var(--text-muted)">—</td><td style="color:var(--green);font-weight:700">86</td><td><span class="badge badge-green">Approved</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SKILL HEATMAP -->
+  <div class="tab-pane" id="performance-tab-heatmap">
+    <div class="card section-gap">
+      <div class="card-header"><div class="card-title">Skill Heatmap — Week 5 Snapshot</div><span class="badge badge-muted">8 dimensions</span></div>
+      <div class="heatmap-grid">
+        <div class="heatmap-cell" style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);"><div class="heatmap-label" style="color:var(--green)">Communication</div><div class="heatmap-score" style="color:var(--green)">88</div></div>
+        <div class="heatmap-cell" style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);"><div class="heatmap-label" style="color:var(--amber)">Leadership</div><div class="heatmap-score" style="color:var(--amber)">74</div></div>
+        <div class="heatmap-cell" style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);"><div class="heatmap-label" style="color:var(--green)">Ownership</div><div class="heatmap-score" style="color:var(--green)">83</div></div>
+        <div class="heatmap-cell" style="background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);"><div class="heatmap-label" style="color:var(--accent-hover)">Initiative</div><div class="heatmap-score" style="color:var(--accent-hover)">81</div></div>
+        <div class="heatmap-cell" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);"><div class="heatmap-label" style="color:var(--red)">Delegation</div><div class="heatmap-score" style="color:var(--red)">61</div></div>
+        <div class="heatmap-cell" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);"><div class="heatmap-label" style="color:var(--green)">Prioritization</div><div class="heatmap-score" style="color:var(--green)">86</div></div>
+        <div class="heatmap-cell" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);"><div class="heatmap-label" style="color:var(--amber)">Risk Detection</div><div class="heatmap-score" style="color:var(--amber)">77</div></div>
+        <div class="heatmap-cell" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);"><div class="heatmap-label" style="color:var(--accent-hover)">Business Thinking</div><div class="heatmap-score" style="color:var(--accent-hover)">79</div></div>
+      </div>
+      <div class="divider"></div>
+      <div style="display:flex;gap:20px;font-size:12px;color:var(--text-muted);flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:6px;"><div style="width:12px;height:12px;background:rgba(16,185,129,0.2);border:1px solid var(--green);border-radius:3px"></div>Strong (80+)</div>
+        <div style="display:flex;align-items:center;gap:6px;"><div style="width:12px;height:12px;background:rgba(245,158,11,0.2);border:1px solid var(--amber);border-radius:3px"></div>Developing (65–79)</div>
+        <div style="display:flex;align-items:center;gap:6px;"><div style="width:12px;height:12px;background:rgba(239,68,68,0.15);border:1px solid var(--red);border-radius:3px"></div>Needs Focus (&lt;65)</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Skill Progress — Week by Week</div></div>
+      <canvas id="heatmap-trend" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- PROMOTION READINESS -->
+  <div class="tab-pane" id="performance-tab-promo">
+    <div class="grid-21 section-gap">
+      <div class="card">
+        <div class="card-header"><div class="card-title">8-Week Progression</div><span style="font-size:12px;color:var(--text-muted);">8 skill dimensions</span></div>
+        <div id="promo-weeks"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">Overall Readiness</div>
+          <div style="text-align:center;padding:16px 0;">
+            <div style="font-size:52px;font-weight:800;background:linear-gradient(135deg,var(--amber),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">78%</div>
+            <span class="readiness-badge emerging" style="margin-top:8px;display:inline-flex;">⚡ Emerging Lead</span>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:12px;line-height:1.6;">3 weeks remaining. Focus on Delegation and Leadership scores to cross the 85% threshold for <strong style="color:var(--blue)">Ready for Trial Lead</strong>.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">Readiness States</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--radius-sm);background:var(--green-dim);border:1px solid rgba(16,185,129,0.2);"><span style="font-size:16px;">✅</span><div><div style="font-size:12px;font-weight:700;color:var(--green)">Ready for Promotion</div><div style="font-size:11px;color:var(--text-muted)">90%+ · All 8 dimensions strong</div></div></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--radius-sm);background:var(--blue-dim);border:1px solid rgba(59,130,246,0.2);"><span style="font-size:16px;">🚀</span><div><div style="font-size:12px;font-weight:700;color:var(--blue)">Ready for Trial Lead</div><div style="font-size:11px;color:var(--text-muted)">85–89% · Low delegation risk</div></div></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--radius-sm);background:var(--amber-dim);border:1px solid rgba(245,158,11,0.2);"><span style="font-size:16px;">⚡</span><div><div style="font-size:12px;font-weight:700;color:var(--amber)">Emerging Lead</div><div style="font-size:11px;color:var(--text-muted)">70–84% · Targeted development</div></div></div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--radius-sm);background:var(--red-dim);border:1px solid rgba(239,68,68,0.2);"><span style="font-size:16px;">⏳</span><div><div style="font-size:12px;font-weight:700;color:var(--red)">Not Ready</div><div style="font-size:11px;color:var(--text-muted)">&lt;70% · Continue training</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== ADMIN PAGE ====== -->
+<div class="page" id="page-admin">
+  <div class="page-header"><div class="page-title">Admin Portal</div><div class="page-subtitle">Team management, trainee oversight, and promotion pipeline</div></div>
+  <div class="tab-group">
+    <button class="tab-btn active" onclick="switchTab('admin','overview',this)">📊 Team Overview</button>
+    <button class="tab-btn" onclick="switchTab('admin','trainees',this)">👥 Trainees</button>
+    <button class="tab-btn" onclick="switchTab('admin','submissions',this)">📝 Submissions</button>
+    <button class="tab-btn" onclick="switchTab('admin','pipeline',this)">🚀 Promotion Pipeline</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="tab-pane active" id="admin-tab-overview">
+    <div class="grid-4 section-gap">
+      <div class="stat-card"><div class="stat-label">Active Trainees</div><div class="stat-value">12</div><div class="stat-change neutral">2 new this week</div></div>
+      <div class="stat-card"><div class="stat-label">Avg Readiness Score</div><div class="stat-value" style="color:var(--amber)">71%</div><div class="stat-change up">↑ +4% WoW</div></div>
+      <div class="stat-card"><div class="stat-label">Submissions Pending</div><div class="stat-value" style="color:var(--red)">8</div><div class="stat-change down">3 overdue</div></div>
+      <div class="stat-card"><div class="stat-label">Ready for Promotion</div><div class="stat-value" style="color:var(--green)">2</div><div class="stat-change up">↑ +1 this week</div></div>
+    </div>
+    <div class="grid-21 section-gap">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Trainee Rankings — Week 5</div><span class="card-action">Export CSV</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Trainee</th><th>Readiness</th><th>Comm</th><th>Leadership</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr class="rank-1"><td><span class="rank-num">1</span></td><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#6366F1,#8B5CF6)">RC</span>Rachel Chen</td><td><strong style="color:var(--green)">91%</strong></td><td>94</td><td>89</td><td><span class="badge badge-green">Ready</span></td></tr>
+              <tr class="rank-2"><td><span class="rank-num">2</span></td><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#10B981,#34D399)">KP</span>Kevin Park</td><td><strong style="color:var(--green)">87%</strong></td><td>88</td><td>86</td><td><span class="badge badge-blue">Trial Lead</span></td></tr>
+              <tr class="rank-3"><td><span class="rank-num">3</span></td><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#F59E0B,#FCD34D)">MS</span>Maria Santos</td><td><strong style="color:var(--amber)">78%</strong></td><td>88</td><td>74</td><td><span class="badge badge-amber">Emerging</span></td></tr>
+              <tr><td><span class="rank-num" style="color:var(--text-muted)">4</span></td><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#3B82F6,#60A5FA)">JL</span>Jordan Lee</td><td><strong style="color:var(--amber)">72%</strong></td><td>79</td><td>68</td><td><span class="badge badge-amber">Emerging</span></td></tr>
+              <tr><td><span class="rank-num" style="color:var(--text-muted)">5</span></td><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#EF4444,#F87171)">AT</span>Alex Torres</td><td><strong style="color:var(--red)">61%</strong></td><td>71</td><td>58</td><td><span class="badge badge-red">Not Ready</span></td></tr>
+              <tr><td><span class="rank-num" style="color:var(--text-muted)">6</span></td><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#8B5CF6,#A78BFA)">SW</span>Sam Wilson</td><td><strong style="color:var(--blue)">85%</strong></td><td>87</td><td>82</td><td><span class="badge badge-blue">Trial Lead</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">Promotion Pipeline</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--green-dim);border-radius:var(--radius-sm);border:1px solid rgba(16,185,129,0.2);"><span style="font-size:13px;font-weight:600;color:var(--green)">✅ Ready</span><span style="font-size:14px;font-weight:700;">2</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--blue-dim);border-radius:var(--radius-sm);border:1px solid rgba(59,130,246,0.2);"><span style="font-size:13px;font-weight:600;color:var(--blue)">🚀 Trial Lead</span><span style="font-size:14px;font-weight:700;">2</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--amber-dim);border-radius:var(--radius-sm);border:1px solid rgba(245,158,11,0.2);"><span style="font-size:13px;font-weight:600;color:var(--amber)">⚡ Emerging</span><span style="font-size:14px;font-weight:700;">5</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--red-dim);border-radius:var(--radius-sm);border:1px solid rgba(239,68,68,0.2);"><span style="font-size:13px;font-weight:600;color:var(--red)">⏳ Not Ready</span><span style="font-size:14px;font-weight:700;">3</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">Quick Actions</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button class="btn btn-primary" style="width:100%;justify-content:center;">+ Create Exercise</button>
+            <button class="btn btn-secondary" style="width:100%;justify-content:center;">Assign Module</button>
+            <button class="btn btn-secondary" style="width:100%;justify-content:center;">Export Full Report</button>
+            <button class="btn btn-ghost" style="width:100%;justify-content:center;">Manage Users</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRAINEES -->
+  <div class="tab-pane" id="admin-tab-trainees">
+    <div class="card">
+      <div class="card-header"><div class="card-title">All Trainees</div><button class="btn btn-primary btn-sm">+ Add Trainee</button></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Trainee</th><th>Week</th><th>Readiness</th><th>Last Active</th><th>Pending</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#6366F1,#8B5CF6)">RC</span>Rachel Chen</td><td>5/8</td><td><strong style="color:var(--green)">91%</strong></td><td>Today</td><td>0</td><td><span class="badge badge-green">Ready</span></td><td><button class="btn btn-ghost btn-sm">Review</button></td></tr>
+            <tr><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#10B981,#34D399)">KP</span>Kevin Park</td><td>5/8</td><td><strong style="color:var(--green)">87%</strong></td><td>Today</td><td>1</td><td><span class="badge badge-blue">Trial Lead</span></td><td><button class="btn btn-ghost btn-sm">Review</button></td></tr>
+            <tr><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#F59E0B,#FCD34D)">MS</span>Maria Santos</td><td>5/8</td><td><strong style="color:var(--amber)">78%</strong></td><td>Today</td><td>2</td><td><span class="badge badge-amber">Emerging</span></td><td><button class="btn btn-ghost btn-sm">Review</button></td></tr>
+            <tr><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#3B82F6,#60A5FA)">JL</span>Jordan Lee</td><td>5/8</td><td><strong style="color:var(--amber)">72%</strong></td><td>Yesterday</td><td>3</td><td><span class="badge badge-amber">Emerging</span></td><td><button class="btn btn-ghost btn-sm">Review</button></td></tr>
+            <tr><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#EF4444,#F87171)">AT</span>Alex Torres</td><td>3/8</td><td><strong style="color:var(--red)">61%</strong></td><td>3 days ago</td><td>5</td><td><span class="badge badge-red">Not Ready</span></td><td><button class="btn btn-ghost btn-sm">Review</button></td></tr>
+            <tr><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#8B5CF6,#A78BFA)">SW</span>Sam Wilson</td><td>6/8</td><td><strong style="color:var(--blue)">85%</strong></td><td>Today</td><td>0</td><td><span class="badge badge-blue">Trial Lead</span></td><td><button class="btn btn-ghost btn-sm">Review</button></td></tr>
+            <tr><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#EC4899,#F472B6)">PT</span>Priya Thomas</td><td>2/8</td><td><strong style="color:var(--red)">58%</strong></td><td>2 days ago</td><td>4</td><td><span class="badge badge-red">Not Ready</span></td><td><button class="btn btn-ghost btn-sm">Review</button></td></tr>
+            <tr><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#14B8A6,#2DD4BF)">DM</span>Diego Martinez</td><td>4/8</td><td><strong style="color:var(--amber)">75%</strong></td><td>Today</td><td>1</td><td><span class="badge badge-amber">Emerging</span></td><td><button class="btn btn-ghost btn-sm">Review</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBMISSIONS -->
+  <div class="tab-pane" id="admin-tab-submissions">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Pending Review</div><span class="badge badge-red">8 pending</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Trainee</th><th>Exercise</th><th>Type</th><th>AI Score</th><th>Submitted</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#F59E0B,#FCD34D)">MS</span>Maria Santos</td><td>Missed Deadline Coaching Scenario</td><td><span class="badge badge-amber">Leadership</span></td><td>74</td><td>Jun 19, 4:32 PM</td><td><button class="btn btn-primary btn-sm" onclick="openModal('feedback-modal')">Leave Feedback</button></td></tr>
+            <tr><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#3B82F6,#60A5FA)">JL</span>Jordan Lee</td><td>Executive Email — Escalation</td><td><span class="badge badge-accent">Communication</span></td><td>68</td><td>Jun 19, 3:10 PM</td><td><button class="btn btn-primary btn-sm" onclick="openModal('feedback-modal')">Leave Feedback</button></td></tr>
+            <tr><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#EF4444,#F87171)">AT</span>Alex Torres</td><td>Ticket Triage — Priority Simulation</td><td><span class="badge badge-blue">Simulation</span></td><td>59</td><td>Jun 18, 2:45 PM</td><td><button class="btn btn-primary btn-sm" onclick="openModal('feedback-modal')">Leave Feedback</button></td></tr>
+            <tr><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#6366F1,#8B5CF6)">RC</span>Rachel Chen</td><td>Week 5 Journal Entry</td><td><span class="badge badge-muted">Reflection</span></td><td>—</td><td>Jun 19, 7:11 AM</td><td><button class="btn btn-success btn-sm">Approve</button></td></tr>
+            <tr><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#14B8A6,#2DD4BF)">DM</span>Diego Martinez</td><td>Customer Update — Delayed Shipment</td><td><span class="badge badge-accent">Communication</span></td><td>81</td><td>Jun 18, 11:22 AM</td><td><button class="btn btn-primary btn-sm" onclick="openModal('feedback-modal')">Leave Feedback</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="tab-pane" id="admin-tab-pipeline">
+    <div class="grid-2 section-gap">
+      <div class="card" style="border-color:rgba(16,185,129,0.3);">
+        <div class="card-header"><div class="card-title" style="color:var(--green)">✅ Ready for Promotion</div></div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:10px;"><span class="user-row-avatar" style="background:linear-gradient(135deg,#6366F1,#8B5CF6)">RC</span><div><div style="font-size:13px;font-weight:700;">Rachel Chen</div><div style="font-size:11px;color:var(--text-muted);">Week 5 · 91% readiness · Comm: 94</div></div></div>
+            <button class="btn btn-success btn-sm">Approve</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="border-color:rgba(59,130,246,0.3);">
+        <div class="card-header"><div class="card-title" style="color:var(--blue)">🚀 Ready for Trial Lead</div></div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:10px;"><span class="user-row-avatar" style="background:linear-gradient(135deg,#10B981,#34D399)">KP</span><div><div style="font-size:13px;font-weight:700;">Kevin Park</div><div style="font-size:11px;color:var(--text-muted);">Week 5 · 87% readiness</div></div></div>
+            <button class="btn btn-primary btn-sm">Assign Trial</button>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:10px;"><span class="user-row-avatar" style="background:linear-gradient(135deg,#8B5CF6,#A78BFA)">SW</span><div><div style="font-size:13px;font-weight:700;">Sam Wilson</div><div style="font-size:11px;color:var(--text-muted);">Week 6 · 85% readiness</div></div></div>
+            <button class="btn btn-primary btn-sm">Assign Trial</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Promotion History</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Trainee</th><th>Completed</th><th>Final Score</th><th>Outcome</th><th>Effective Date</th></tr></thead>
+          <tbody>
+            <tr><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#10B981,#34D399)">LN</span>Lin Nguyen</td><td>April 28, 2025</td><td><strong style="color:var(--green)">93%</strong></td><td><span class="badge badge-green">Promoted ✓</span></td><td>May 5, 2025</td></tr>
+            <tr><td><span class="user-row-avatar" style="background:linear-gradient(135deg,#F59E0B,#FCD34D)">BK</span>Brian Kim</td><td>March 14, 2025</td><td><strong style="color:var(--blue)">88%</strong></td><td><span class="badge badge-blue">Trial Lead ✓</span></td><td>March 21, 2025</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main-area -->
+</div><!-- /app -->
+
+<!-- MODALS -->
+<div class="modal-overlay" id="decision-modal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Log a Decision</div><button class="modal-close" onclick="closeModal('decision-modal')">✕</button></div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label class="form-label">Decision / Problem Faced</label><textarea class="field-textarea" id="dec-problem" style="min-height:60px;" placeholder="What decision did you face?"></textarea></div>
+      <div><label class="form-label">Options Considered</label><textarea class="field-textarea" id="dec-options" style="min-height:60px;" placeholder="List the options you thought through..."></textarea></div>
+      <div><label class="form-label">Decision Made</label><textarea class="field-textarea" id="dec-decision" style="min-height:50px;" placeholder="What did you decide?"></textarea></div>
+      <div><label class="form-label">Outcome (if known)</label><textarea class="field-textarea" id="dec-outcome" style="min-height:50px;" placeholder="What happened as a result?"></textarea></div>
+      <div><label class="form-label">Lesson Learned</label><textarea class="field-textarea" id="dec-lesson" style="min-height:60px;" placeholder="What would you do differently or the same?"></textarea></div>
+      <button class="btn btn-primary" onclick="saveDecision()">Save Decision</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="journal-modal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Week 5 Journal Entry</div><button class="modal-close" onclick="closeModal('journal-modal')">✕</button></div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label class="form-label">🏆 Biggest Win This Week</label><textarea class="field-textarea" id="journal-win" style="min-height:70px;" placeholder="What went well? What are you proud of?"></textarea></div>
+      <div><label class="form-label">❌ Biggest Mistake</label><textarea class="field-textarea" id="journal-mistake" style="min-height:70px;" placeholder="What didn't go as planned? What was your role in it?"></textarea></div>
+      <div><label class="form-label">💡 Biggest Learning</label><textarea class="field-textarea" id="journal-learning" style="min-height:70px;" placeholder="What did you learn from this week that you'll carry forward?"></textarea></div>
+      <div><label class="form-label">🎯 Next Improvement</label><textarea class="field-textarea" id="journal-next" style="min-height:70px;" placeholder="What specific behavior or skill will you practice next week?"></textarea></div>
+      <button class="btn btn-primary" onclick="saveJournalEntry()">Save Journal Entry</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="feedback-modal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Leave Manager Feedback</div><button class="modal-close" onclick="closeModal('feedback-modal')">✕</button></div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="background:var(--bg-card);padding:12px;border-radius:var(--radius-sm);border:1px solid var(--border);">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Submission</div>
+        <div style="font-size:13px;font-weight:600;">Maria Santos — Missed Deadline Coaching Scenario</div>
+        <div style="font-size:12px;color:var(--text-muted);">AI Score: 74 · Submitted Jun 19</div>
+      </div>
+      <div><label class="form-label">Qualitative Feedback</label><textarea class="field-textarea" style="min-height:100px;" placeholder="Write specific, actionable feedback for this trainee..."></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div><label class="form-label">Communication Score</label><input class="form-input" type="number" min="0" max="100" value="74"></div>
+        <div><label class="form-label">Leadership Score</label><input class="form-input" type="number" min="0" max="100" value="74"></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" onclick="closeModal('feedback-modal')">Submit Feedback</button>
+        <button class="btn btn-secondary" onclick="closeModal('feedback-modal')">Request Revision</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="module-modal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="module-modal-title">Module</div><button class="modal-close" onclick="closeModal('module-modal')">✕</button></div>
+    <div id="module-modal-body"></div>
+  </div>
+</div>
+<script>
+/* ===== STATE ===== */
+let currentRole = 'csr';
+let currentTheme = 'dark';
+let sidebarCollapsed = false;
+
+/* ===== AUTH ===== */
+function setRole(role, el) {
+  currentRole = role;
+  document.querySelectorAll('.auth-role-tab').forEach(t => t.classList.remove('active'));
+  if(el) el.classList.add('active');
+}
+function doLogin() {
+  document.getElementById('auth-screen').classList.add('hidden');
+  setTimeout(() => {
+    const app = document.getElementById('app');
+    app.classList.add('visible');
+    if(currentRole === 'admin') setupAdmin(); else setupCSR();
+    setTimeout(initCharts, 200);
+  }, 250);
+}
+function setupAdmin() {
+  document.getElementById('user-name').textContent = 'Nicole Cruz';
+  document.getElementById('user-role').textContent = 'Account Director';
+  document.getElementById('user-avatar').textContent = 'NC';
+  document.getElementById('user-avatar').style.background = 'linear-gradient(135deg,#10B981,#34D399)';
+  document.getElementById('week-indicator').textContent = '⚙️ Admin Mode';
+  document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+  showPage('admin', document.querySelector('[onclick*="showPage(\'admin\'"]'));
+}
+function setupCSR() {
+  document.getElementById('user-name').textContent = 'Maria Santos';
+  document.getElementById('user-role').textContent = 'CSR Trainee · Week 5';
+  document.getElementById('user-avatar').textContent = 'M';
+  document.getElementById('user-avatar').style.background = 'linear-gradient(135deg,#6366F1,#8B5CF6)';
+  document.getElementById('week-indicator').textContent = '📅 Week 5 of 8';
+}
+function doLogout() {
+  document.getElementById('app').classList.remove('visible');
+  setTimeout(() => document.getElementById('auth-screen').classList.remove('hidden'), 300);
+}
+
+/* ===== NAVIGATION ===== */
+const pageNames = { dashboard:'Dashboard', learn:'Learn', practice:'Practice', aitools:'AI Tools', decisions:'Decision Center', performance:'Performance', admin:'Admin Portal' };
+function showPage(pageId, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const page = document.getElementById('page-' + pageId);
+  if(page) page.classList.add('active');
+  if(el) el.classList.add('active');
+  document.getElementById('topbar-section').textContent = pageNames[pageId] || pageId;
+  if(pageId === 'performance') { setTimeout(initCharts, 100); setTimeout(renderPromoWeeks, 100); }
+  if(window.innerWidth <= 900) document.getElementById('sidebar').classList.remove('mobile-open');
+}
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  if(window.innerWidth <= 900) sb.classList.toggle('mobile-open');
+  else { sidebarCollapsed = !sidebarCollapsed; sb.classList.toggle('collapsed', sidebarCollapsed); }
+}
+function toggleTheme() {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  document.getElementById('theme-btn').textContent = currentTheme === 'dark' ? '🌙' : '☀️';
+  setTimeout(() => { drawTrendChart(); initHeatmapChart(); }, 50);
+}
+function toggleNotif() { document.getElementById('notif-panel').classList.toggle('open'); }
+document.addEventListener('click', e => {
+  if(!e.target.closest('.notif-btn') && !e.target.closest('.notif-panel')) document.getElementById('notif-panel').classList.remove('open');
+});
+
+/* ===== TABS ===== */
+// Maps page prefix to the actual page HTML id
+const pageMap = { 'learn':'page-learn', 'practice':'page-practice', 'aitools':'page-aitools', 'decisions':'page-decisions', 'performance':'page-performance', 'admin':'page-admin' };
+function switchTab(prefix, tabId, btn) {
+  const pageEl = document.getElementById(pageMap[prefix]);
+  if(!pageEl) return;
+  const group = btn ? btn.parentElement : null;
+  if(group) { group.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active'); }
+  pageEl.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  const pane = document.getElementById(prefix + '-tab-' + tabId);
+  if(pane) pane.classList.add('active');
+  if(prefix === 'performance' && tabId === 'promo') renderPromoWeeks();
+  if(prefix === 'performance' && tabId === 'weekly') setTimeout(drawTrendChart, 50);
+  if(prefix === 'performance' && tabId === 'heatmap') setTimeout(initHeatmapChart, 50);
+}
+function switchTabById(paneId) {
+  const pane = document.getElementById(paneId);
+  if(!pane) return;
+  const parent = pane.parentElement;
+  parent.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  pane.classList.add('active');
+}
+
+
+/* ============================================================
+   STORAGE HELPERS
+   ============================================================ */
+const DB_KEY = 'leadpath_data';
+
+async function dbLoad() {
+  try {
+    const r = await window.storage.get(DB_KEY);
+    return r ? JSON.parse(r.value) : {};
+  } catch(e) { return {}; }
+}
+
+async function dbSave(data) {
+  try {
+    await window.storage.set(DB_KEY, JSON.stringify(data));
+  } catch(e) { console.warn('Storage save failed', e); }
+}
+
+async function dbMerge(patch) {
+  const data = await dbLoad();
+  const merged = { ...data, ...patch };
+  await dbSave(merged);
+  return merged;
+}
+
+/* ============================================================
+   ANTHROPIC API HELPER
+   ============================================================ */
+async function callClaude(systemPrompt, userPrompt, maxTokens = 900) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }]
+    })
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  const data = await res.json();
+  return data.content.map(b => b.text || '').join('');
+}
+
+function parseJSON(text) {
+  try {
+    const clean = text.replace(/```json\n?|```/g, '').trim();
+    return JSON.parse(clean);
+  } catch(e) {
+    const match = text.match(/\{[\s\S]*\}/);
+    if (match) try { return JSON.parse(match[0]); } catch(e2) {}
+    return null;
+  }
+}
+
+/* ============================================================
+   UI LOADING HELPERS
+   ============================================================ */
+function showLoading(containerId, message = 'AI is analyzing your response…') {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;padding:20px;background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08));border:1px solid rgba(99,102,241,0.2);border-radius:var(--radius);">
+      <div class="ai-spinner"></div>
+      <span style="font-size:13px;color:var(--accent-hover);font-weight:500;">${message}</span>
+    </div>`;
+}
+
+function showError(containerId, msg) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = `<div style="padding:16px;background:var(--red-dim);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius);font-size:13px;color:var(--red);">⚠️ ${msg}</div>`;
+}
+
+/* Spinner CSS injected once */
+const spinnerStyle = document.createElement('style');
+spinnerStyle.textContent = `
+.ai-spinner{width:20px;height:20px;min-width:20px;border:2px solid rgba(99,102,241,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.score-pill{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;font-size:14px;font-weight:700;}
+.score-pill.high{background:var(--green-dim);color:var(--green);}
+.score-pill.mid{background:var(--amber-dim);color:var(--amber);}
+.score-pill.low{background:var(--red-dim);color:var(--red);}
+.storage-toast{position:fixed;bottom:24px;right:24px;background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 16px;font-size:12px;color:var(--green);z-index:999;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;animation:slideUp 0.3s ease;pointer-events:none;}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+`;
+document.head.appendChild(spinnerStyle);
+
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'storage-toast';
+  t.innerHTML = `✅ ${msg}`;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+function scoreClass(n) { return n >= 80 ? 'high' : n >= 65 ? 'mid' : 'low'; }
+
+/* ============================================================
+   PRACTICE — REAL AI SCORING
+   ============================================================ */
+async function submitDrill(inputId, fbId) {
+  const val = document.getElementById(inputId).value.trim();
+  if (!val) {
+    document.getElementById(inputId).style.borderColor = 'var(--red)';
+    setTimeout(() => document.getElementById(inputId).style.borderColor = '', 2000);
+    return;
+  }
+
+  showLoading(fbId, 'Communication Coach is scoring your response…');
+  document.getElementById(fbId).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  const system = `You are an expert CSR leadership communication coach. Score and analyze trainee responses to communication exercises. You must respond ONLY with valid JSON, no markdown, no preamble.`;
+
+  const prompt = `A CSR trainee submitted this response to an executive escalation exercise (Apex Corp SLA briefing for VP of Operations):
+
+TRAINEE RESPONSE:
+"${val}"
+
+Score on these 5 dimensions (0–100 each):
+1. clarity - Is the main point immediately clear? Bottom line up front?
+2. authority - Does the language convey confidence and ownership? No hedging?
+3. ownership - Does the trainee claim the situation rather than deflect?
+4. audienceFit - Is the tone/length/depth appropriate for a VP?
+5. escalationJudgment - Is the escalation framing correct? Right level of urgency?
+
+Then provide:
+- overallScore (average of 5)
+- strengths (array of 2–3 specific observations, each one sentence, citing what they actually wrote)
+- improvements (array of 2 specific improvements, each one sentence)
+- rewrite (a 2-3 sentence improved version showing what excellent looks like)
+
+Respond with ONLY this JSON structure, no other text:
+{"clarity":0,"authority":0,"ownership":0,"audienceFit":0,"escalationJudgment":0,"overallScore":0,"strengths":[],"improvements":[],"rewrite":""}`;
+
+  try {
+    const raw = await callClaude(system, prompt, 800);
+    const scores = parseJSON(raw);
+    if (!scores) throw new Error('Could not parse AI response');
+
+    const dims = [
+      { key: 'clarity', label: 'Clarity' },
+      { key: 'authority', label: 'Authority' },
+      { key: 'ownership', label: 'Ownership' },
+      { key: 'audienceFit', label: 'Audience Fit' },
+      { key: 'escalationJudgment', label: 'Escalation' },
+    ];
+
+    document.getElementById(fbId).innerHTML = `
+      <div class="ai-feedback">
+        <div class="ai-feedback-header">🤖 AI Communication Coach — Live Feedback</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+          ${dims.map(d => `<div style="text-align:center;min-width:80px;">
+            <div class="score-pill ${scoreClass(scores[d.key])}">${scores[d.key]}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">${d.label}</div>
+          </div>`).join('')}
+          <div style="text-align:center;min-width:80px;">
+            <div class="score-pill ${scoreClass(scores.overallScore)}" style="width:52px;height:52px;font-size:16px;">${scores.overallScore}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:5px;font-weight:700;">Overall</div>
+          </div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:6px;">✅ Strengths</div>
+          ${(scores.strengths||[]).map(s => `<div class="feedback-li"><span class="feedback-dot" style="background:var(--green)"></span><span style="color:var(--text-secondary)">${s}</span></div>`).join('')}
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:6px;">⚠️ Areas to Improve</div>
+          ${(scores.improvements||[]).map(s => `<div class="feedback-li"><span class="feedback-dot" style="background:var(--amber)"></span><span style="color:var(--text-secondary)">${s}</span></div>`).join('')}
+        </div>
+        ${scores.rewrite ? `<div style="background:var(--bg-panel);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--border);">
+          <div style="font-size:12px;font-weight:700;color:var(--accent-hover);margin-bottom:8px;">💡 Suggested Rewrite</div>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;font-style:italic;">"${scores.rewrite}"</div>
+        </div>` : ''}
+      </div>`;
+
+    /* Persist score */
+    const data = await dbLoad();
+    const submissions = data.submissions || [];
+    submissions.push({ type: 'communication-drill', score: scores.overallScore, ts: Date.now(), week: 5 });
+    await dbMerge({ submissions });
+    toast('Score saved to your performance record');
+    updateDashboardScores();
+  } catch (err) {
+    showError(fbId, `Could not get AI feedback: ${err.message}`);
+  }
+}
+
+async function submitLeadership(inputId, fbId) {
+  const val = document.getElementById(inputId).value.trim();
+  if (!val) {
+    document.getElementById(inputId).style.borderColor = 'var(--red)';
+    setTimeout(() => document.getElementById(inputId).style.borderColor = '', 2000);
+    return;
+  }
+
+  showLoading(fbId, 'Leadership Coach is assessing your approach…');
+  document.getElementById(fbId).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  const system = `You are an expert leadership development coach who assesses CSR trainees learning to become team leads. Respond ONLY with valid JSON, no markdown, no preamble.`;
+
+  const prompt = `A CSR trainee is practicing an accountability conversation with Jordan, a junior CSR who has missed the Apex Corp 4PM update deadline 3 times in 2 weeks. The client flagged it and the manager saw it before the trainee did.
+
+TRAINEE'S RESPONSE (what they'd say to Jordan):
+"${val}"
+
+Assess on these 4 dimensions (0–100 each):
+1. directness - Does the trainee name the pattern and the business impact clearly?
+2. empathy - Is the tone respectful without being dismissive of the seriousness?
+3. accountability - Does the trainee set a clear, specific expectation with consequences?
+4. clarity - Is the message structured and unambiguous?
+
+Then provide:
+- overallScore (average)
+- assessment (2-3 sentence overall assessment of the approach)
+- riskAnalysis (1-2 sentences on what could go wrong with this approach)
+- recommendedApproach (array of 3–4 concrete steps they should take instead or additionally)
+- alternativeApproach (1 sentence describing an alternative tactic and when to use it)
+
+Respond with ONLY this JSON, no other text:
+{"directness":0,"empathy":0,"accountability":0,"clarity":0,"overallScore":0,"assessment":"","riskAnalysis":"","recommendedApproach":[],"alternativeApproach":""}`;
+
+  try {
+    const raw = await callClaude(system, prompt, 800);
+    const result = parseJSON(raw);
+    if (!result) throw new Error('Could not parse AI response');
+
+    const dims = [
+      { key: 'directness', label: 'Directness' },
+      { key: 'empathy', label: 'Empathy' },
+      { key: 'accountability', label: 'Accountability' },
+      { key: 'clarity', label: 'Clarity' },
+    ];
+
+    document.getElementById(fbId).innerHTML = `
+      <div class="ai-feedback">
+        <div class="ai-feedback-header">🤖 AI Leadership Coach — Live Assessment</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+          ${dims.map(d => `<div style="text-align:center;min-width:80px;">
+            <div class="score-pill ${scoreClass(result[d.key])}">${result[d.key]}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">${d.label}</div>
+          </div>`).join('')}
+          <div style="text-align:center;min-width:80px;">
+            <div class="score-pill ${scoreClass(result.overallScore)}" style="width:52px;height:52px;font-size:16px;">${result.overallScore}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:5px;font-weight:700;">Overall</div>
+          </div>
+        </div>
+        ${result.assessment ? `<div class="card" style="margin-bottom:12px;"><div class="card-title" style="margin-bottom:8px;">Leadership Assessment</div><div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">${result.assessment}</div></div>` : ''}
+        ${result.riskAnalysis ? `<div class="card" style="margin-bottom:12px;"><div class="card-title" style="margin-bottom:8px;">⚠️ Risk Analysis</div><div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">${result.riskAnalysis}</div></div>` : ''}
+        ${result.recommendedApproach && result.recommendedApproach.length ? `<div class="card" style="margin-bottom:12px;"><div class="card-title" style="margin-bottom:10px;">Recommended Approach</div><ul class="framework-steps">${result.recommendedApproach.map(s=>`<li>${s}</li>`).join('')}</ul></div>` : ''}
+        ${result.alternativeApproach ? `<div class="card"><div class="card-title" style="margin-bottom:8px;">Alternative Tactic</div><div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">${result.alternativeApproach}</div></div>` : ''}
+      </div>`;
+
+    const data = await dbLoad();
+    const submissions = data.submissions || [];
+    submissions.push({ type: 'leadership-scenario', score: result.overallScore, ts: Date.now(), week: 5 });
+    await dbMerge({ submissions });
+    toast('Leadership score saved');
+    updateDashboardScores();
+  } catch (err) {
+    showError(fbId, `Could not get AI feedback: ${err.message}`);
+  }
+}
+
+function fillSample(inputId) {
+  document.getElementById(inputId).value = "Sarah — Heads up before your call with Apex Corp.\n\nSituation: Apex Corp has missed their same-day delivery SLA for the third consecutive week (June 3, 10, 17). The account is valued at $2.4M ARR. Their Operations Director, David Reyes, has escalated directly to you at 9:42 AM today.\n\nCurrent status: The June 17 shipment is in transit with delivery expected EOD today. Root cause has been identified as a carrier routing issue flagged to our ops team Wednesday — carrier response pending.\n\nRecommendation: I suggest opening the call by acknowledging the pattern directly, not just the incident. Apex values directness. I recommend committing to a 48-hour written root cause brief from our side. I can join the call if you need operational context, and can have a written brief ready in 90 minutes if useful.";
+}
+
+function selectTicket(id) {
+  document.querySelectorAll('.ticket-card').forEach(t => t.classList.remove('selected'));
+  const t = document.getElementById('ticket-' + id);
+  if (t) t.classList.add('selected');
+}
+
+function filterAudience(el, audience) {
+  document.querySelectorAll('.audience-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.audience-card').forEach(card => {
+    card.style.display = (audience === 'all' || card.dataset.audience === audience) ? '' : 'none';
+  });
+}
+
+/* ============================================================
+   AI TOOLS — COMMUNICATION COACH (LIVE)
+   ============================================================ */
+async function runCommCoach() {
+  const original = document.getElementById('ai-original').value.trim();
+  const proposed = document.getElementById('ai-proposed').value.trim();
+  const audience = document.querySelector('#aitools-tab-comm select').value;
+  const out = document.getElementById('comm-coach-output');
+
+  if (!proposed) {
+    document.getElementById('ai-proposed').style.borderColor = 'var(--red)';
+    setTimeout(() => document.getElementById('ai-proposed').style.borderColor = '', 2000);
+    return;
+  }
+
+  out.innerHTML = `<div style="display:flex;align-items:center;gap:12px;padding:24px;background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);"><div class="ai-spinner"></div><span style="font-size:13px;color:var(--text-secondary);">Analyzing your message…</span></div>`;
+
+  const system = `You are an expert communication coach for CSR professionals developing into team leads. You score message quality and provide specific, actionable coaching. Respond ONLY with valid JSON, no markdown.`;
+
+  const prompt = `Analyze this communication rewrite for a ${audience} audience.
+
+ORIGINAL MESSAGE:
+"${original || '(no original provided)'}"
+
+TRAINEE'S REWRITE:
+"${proposed}"
+
+Score the REWRITE on (0–100 each):
+1. clarity - Is the main point clear immediately? BLUF structure?
+2. authority - Confident, ownership language, no hedging?
+3. ownership - Trainee takes responsibility rather than deflecting?
+4. audienceFit - Tone, length, depth appropriate for ${audience}?
+5. escalationJudgment - Escalation framing correct for the situation?
+
+Provide:
+- overallScore (weighted average)
+- strengthsList (array of 2–3 specific observations citing exact phrases)
+- improvementsList (array of 2 specific improvement suggestions)
+- suggestedRewrite (a polished version, 2–4 sentences)
+- comparisonNote (1 sentence on most significant improvement from original to rewrite)
+
+JSON only, no other text:
+{"clarity":0,"authority":0,"ownership":0,"audienceFit":0,"escalationJudgment":0,"overallScore":0,"strengthsList":[],"improvementsList":[],"suggestedRewrite":"","comparisonNote":""}`;
+
+  try {
+    const raw = await callClaude(system, prompt, 900);
+    const r = parseJSON(raw);
+    if (!r) throw new Error('Parse failed');
+
+    const bars = [
+      { label: 'Clarity', val: r.clarity },
+      { label: 'Authority', val: r.authority },
+      { label: 'Ownership', val: r.ownership },
+      { label: 'Audience Fit', val: r.audienceFit },
+      { label: 'Escalation Judgment', val: r.escalationJudgment },
+    ];
+
+    const barColor = v => v >= 80 ? 'var(--green)' : v >= 65 ? 'var(--accent)' : 'var(--amber)';
+    const numColor = v => v >= 80 ? 'var(--green)' : v >= 65 ? 'var(--accent)' : 'var(--amber)';
+
+    out.innerHTML = `
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-header">
+          <div class="card-title">Score Breakdown</div>
+          <span class="badge ${r.overallScore >= 80 ? 'badge-green' : r.overallScore >= 65 ? 'badge-accent' : 'badge-amber'}">Overall: ${r.overallScore}/100</span>
+        </div>
+        ${bars.map(b => `
+          <div class="ai-score-bar-row">
+            <div class="ai-score-bar-label">${b.label}</div>
+            <div class="ai-score-bar-track"><div class="ai-score-bar-fill" style="width:${b.val}%;background:${barColor(b.val)}"></div></div>
+            <div class="ai-score-bar-num" style="color:${numColor(b.val)}">${b.val}</div>
+          </div>`).join('')}
+      </div>
+      ${r.comparisonNote ? `<div class="card" style="margin-bottom:14px;background:var(--accent-dim);border-color:rgba(99,102,241,0.2);">
+        <div style="font-size:13px;color:var(--accent-hover);line-height:1.6;">📊 ${r.comparisonNote}</div>
+      </div>` : ''}
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-title" style="margin-bottom:10px;">✅ Strengths</div>
+        ${(r.strengthsList||[]).map(s => `<div class="feedback-li"><span class="feedback-dot" style="background:var(--green)"></span><span style="color:var(--text-secondary)">${s}</span></div>`).join('')}
+      </div>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-title" style="margin-bottom:10px;">⚠️ Areas to Improve</div>
+        ${(r.improvementsList||[]).map(s => `<div class="feedback-li"><span class="feedback-dot" style="background:var(--amber)"></span><span style="color:var(--text-secondary)">${s}</span></div>`).join('')}
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:10px;">💡 Suggested Rewrite</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;background:var(--bg-card);padding:14px;border-radius:var(--radius-sm);border:1px solid var(--border);font-style:italic;">"${r.suggestedRewrite}"</div>
+      </div>`;
+
+    const data = await dbLoad();
+    const history = data.commCoachHistory || [];
+    history.unshift({ audience, score: r.overallScore, ts: Date.now(), proposed: proposed.slice(0, 120) });
+    if (history.length > 20) history.pop();
+    await dbMerge({ commCoachHistory: history });
+    toast('Analysis saved to history');
+  } catch (err) {
+    out.innerHTML = `<div style="padding:16px;background:var(--red-dim);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius);font-size:13px;color:var(--red);">⚠️ ${err.message}</div>`;
+  }
+}
+
+/* ============================================================
+   AI TOOLS — LEADERSHIP COACH (LIVE)
+   ============================================================ */
+async function runLeadCoach() {
+  const situation = document.getElementById('lead-situation').value.trim();
+  const action = document.getElementById('lead-action').value.trim();
+  const out = document.getElementById('lead-coach-output');
+
+  if (!situation || !action) {
+    if (!situation) document.getElementById('lead-situation').style.borderColor = 'var(--red)';
+    if (!action) document.getElementById('lead-action').style.borderColor = 'var(--red)';
+    setTimeout(() => {
+      document.getElementById('lead-situation').style.borderColor = '';
+      document.getElementById('lead-action').style.borderColor = '';
+    }, 2000);
+    return;
+  }
+
+  out.innerHTML = `<div style="display:flex;align-items:center;gap:12px;padding:24px;background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);"><div class="ai-spinner"></div><span style="font-size:13px;color:var(--text-secondary);">Leadership Coach is assessing your approach…</span></div>`;
+
+  const system = `You are a senior leadership development coach specializing in training CSRs to become effective team leads. You assess decision quality and leadership maturity. Respond ONLY with valid JSON.`;
+
+  const prompt = `A CSR trainee describes this leadership situation and their proposed action:
+
+SITUATION:
+"${situation}"
+
+PROPOSED ACTION:
+"${action}"
+
+Provide a leadership assessment:
+- decisionQuality (0–100): How sound is the decision/action they chose?
+- leadershipMaturity (0–100): How developed is their leadership thinking?
+- overallScore (average of the two)
+- assessment (2–3 sentences: overall quality of their leadership approach)
+- riskAnalysis (1–2 sentences: what could go wrong or what they're missing)
+- recommendedSteps (array of 3–4 concrete next steps, specific and actionable)
+- escalationAdvice (1–2 sentences: when to loop in management and when not to)
+- alternativeApproach (1–2 sentences: a meaningfully different tactic they haven't considered)
+- statusLabel: one of "Strong Approach", "Good Direction", "Needs Refinement", "Significant Risk"
+
+JSON only:
+{"decisionQuality":0,"leadershipMaturity":0,"overallScore":0,"assessment":"","riskAnalysis":"","recommendedSteps":[],"escalationAdvice":"","alternativeApproach":"","statusLabel":""}`;
+
+  try {
+    const raw = await callClaude(system, prompt, 900);
+    const r = parseJSON(raw);
+    if (!r) throw new Error('Parse failed');
+
+    const statusColor = { 'Strong Approach': 'badge-green', 'Good Direction': 'badge-accent', 'Needs Refinement': 'badge-amber', 'Significant Risk': 'badge-red' };
+    const badge = statusColor[r.statusLabel] || 'badge-muted';
+
+    out.innerHTML = `
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-header">
+          <div class="card-title">Leadership Assessment</div>
+          <span class="badge ${badge}">${r.statusLabel}</span>
+        </div>
+        <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:120px;">
+            <div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Decision Quality</div>
+            <div style="font-size:28px;font-weight:700;color:${r.decisionQuality>=80?'var(--green)':r.decisionQuality>=65?'var(--accent)':'var(--amber)'}">${r.decisionQuality}</div>
+          </div>
+          <div style="flex:1;min-width:120px;">
+            <div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Leadership Maturity</div>
+            <div style="font-size:28px;font-weight:700;color:${r.leadershipMaturity>=80?'var(--green)':r.leadershipMaturity>=65?'var(--accent)':'var(--amber)'}">${r.leadershipMaturity}</div>
+          </div>
+          <div style="flex:1;min-width:120px;">
+            <div style="font-size:11px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Overall</div>
+            <div style="font-size:28px;font-weight:700;color:${r.overallScore>=80?'var(--green)':r.overallScore>=65?'var(--accent)':'var(--amber)'}">${r.overallScore}</div>
+          </div>
+        </div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">${r.assessment}</div>
+      </div>
+      ${r.riskAnalysis ? `<div class="card" style="margin-bottom:14px;">
+        <div class="card-title" style="margin-bottom:8px;">⚠️ Risk Analysis</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">${r.riskAnalysis}</div>
+      </div>` : ''}
+      ${r.recommendedSteps && r.recommendedSteps.length ? `<div class="card" style="margin-bottom:14px;">
+        <div class="card-title" style="margin-bottom:10px;">Recommended Next Steps</div>
+        <ul class="framework-steps">${r.recommendedSteps.map(s=>`<li>${s}</li>`).join('')}</ul>
+      </div>` : ''}
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-title" style="margin-bottom:8px;">Escalation Advice</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">${r.escalationAdvice}</div>
+      </div>
+      ${r.alternativeApproach ? `<div class="card">
+        <div class="card-title" style="margin-bottom:8px;">Alternative Approach</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">${r.alternativeApproach}</div>
+      </div>` : ''}`;
+
+    const data = await dbLoad();
+    const history = data.leadershipHistory || [];
+    history.unshift({ score: r.overallScore, ts: Date.now(), situation: situation.slice(0, 100), status: r.statusLabel });
+    if (history.length > 20) history.pop();
+    await dbMerge({ leadershipHistory: history });
+    toast('Leadership assessment saved');
+    updateDashboardScores();
+  } catch (err) {
+    out.innerHTML = `<div style="padding:16px;background:var(--red-dim);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius);font-size:13px;color:var(--red);">⚠️ ${err.message}</div>`;
+  }
+}
+
+/* ============================================================
+   AI TOOLS — RCA ASSISTANT (LIVE)
+   ============================================================ */
+async function submitRCA() {
+  const problem = document.getElementById('rca-problem')?.value?.trim();
+  const why1 = document.getElementById('rca-why1')?.value?.trim();
+  const why2 = document.getElementById('rca-why2')?.value?.trim();
+  const why3 = document.getElementById('rca-why3')?.value?.trim();
+  const why4 = document.getElementById('rca-why4')?.value?.trim();
+  const why5 = document.getElementById('rca-why5')?.value?.trim();
+  const fix = document.getElementById('rca-fix')?.value?.trim();
+  const out = document.getElementById('rca-output');
+
+  if (!problem || !why1) {
+    alert('Please fill in at least the Problem Statement and Why #1.');
+    return;
+  }
+
+  out.style.display = 'block';
+  showLoading('rca-output', 'RCA Assistant is analyzing your root cause chain…');
+  out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  const system = `You are an expert operations analyst coaching CSR trainees on root cause analysis. Respond ONLY with valid JSON.`;
+
+  const prompt = `Review this 5-Whys root cause analysis submitted by a CSR trainee:
+
+Problem: "${problem}"
+Why 1: "${why1}"
+Why 2: "${why2 || '(not provided)'}"
+Why 3: "${why3 || '(not provided)'}"
+Why 4: "${why4 || '(not provided)'}"
+Why 5: "${why5 || '(not provided)'}"
+Proposed Fix: "${fix || '(not provided)'}"
+
+Evaluate:
+- chainQuality (0–100): How logical and deep is the why chain? Does each why actually explain the previous?
+- rootCauseAccuracy (0–100): Does the final why reach a true root cause vs. a symptom?
+- fixAlignment (0–100): Does the proposed fix address the root cause or just a symptom?
+- overallScore (average)
+- assessment (2–3 sentences on the quality of the analysis)
+- gapIdentified (1–2 sentences: where the chain breaks down or stays too shallow)
+- improvedRootCause (1 sentence: what a deeper root cause might be)
+- improvedFix (1–2 sentences: a more systemic fix that addresses the root)
+- managerNote (1 sentence: what a manager would want to see before approving this RCA)
+
+JSON only:
+{"chainQuality":0,"rootCauseAccuracy":0,"fixAlignment":0,"overallScore":0,"assessment":"","gapIdentified":"","improvedRootCause":"","improvedFix":"","managerNote":""}`;
+
+  try {
+    const raw = await callClaude(system, prompt, 800);
+    const r = parseJSON(raw);
+    if (!r) throw new Error('Parse failed');
+
+    out.innerHTML = `
+      <div class="ai-feedback">
+        <div class="ai-feedback-header">🤖 RCA Assistant — Analysis Complete</div>
+        <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+          ${[['Chain Quality', r.chainQuality], ['Root Cause Accuracy', r.rootCauseAccuracy], ['Fix Alignment', r.fixAlignment], ['Overall', r.overallScore]].map(([lbl, val]) => `
+            <div style="text-align:center;min-width:90px;">
+              <div class="score-pill ${scoreClass(val)}" ${lbl==='Overall'?'style="width:52px;height:52px;font-size:16px;"':''}>${val}</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">${lbl}</div>
+            </div>`).join('')}
+        </div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:14px;padding:12px;background:var(--bg-panel);border-radius:var(--radius-sm);border:1px solid var(--border);">${r.assessment}</div>
+        ${r.gapIdentified ? `<div style="margin-bottom:10px;"><div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:4px;">⚠️ Gap in Chain</div><div style="font-size:13px;color:var(--text-secondary);">${r.gapIdentified}</div></div>` : ''}
+        ${r.improvedRootCause ? `<div style="margin-bottom:10px;"><div style="font-size:12px;font-weight:700;color:var(--accent-hover);margin-bottom:4px;">💡 Deeper Root Cause</div><div style="font-size:13px;color:var(--text-secondary);">${r.improvedRootCause}</div></div>` : ''}
+        ${r.improvedFix ? `<div style="margin-bottom:10px;"><div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:4px;">🔧 Stronger Fix</div><div style="font-size:13px;color:var(--text-secondary);">${r.improvedFix}</div></div>` : ''}
+        ${r.managerNote ? `<div style="padding:10px 14px;background:var(--accent-dim);border-radius:var(--radius-sm);border:1px solid rgba(99,102,241,0.2);font-size:12px;color:var(--accent-hover);"><strong>Manager Note:</strong> ${r.managerNote}</div>` : ''}
+      </div>`;
+
+    const data = await dbLoad();
+    const rcas = data.rcaHistory || [];
+    rcas.unshift({ score: r.overallScore, ts: Date.now(), problem: problem.slice(0, 80) });
+    if (rcas.length > 10) rcas.pop();
+    await dbMerge({ rcaHistory: rcas });
+    toast('RCA saved to your record');
+  } catch (err) {
+    out.innerHTML = `<div style="padding:16px;background:var(--red-dim);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius);font-size:13px;color:var(--red);">⚠️ ${err.message}</div>`;
+  }
+}
+
+/* ============================================================
+   AI TOOLS — STAKEHOLDER MAPPER (LIVE)
+   ============================================================ */
+async function generateStakeholderMap() {
+  const initiative = document.getElementById('sm-initiative')?.value?.trim();
+  const dept = document.getElementById('sm-dept')?.value?.trim();
+  const context = document.getElementById('sm-context')?.value?.trim();
+  const out = document.getElementById('stakeholder-map-output');
+
+  if (!initiative) { alert('Please enter an initiative name.'); return; }
+
+  out.style.display = 'block';
+  showLoading('stakeholder-map-output', 'Mapping stakeholders for your initiative…');
+  out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  const system = `You are an expert organizational strategist helping CSR trainees understand stakeholder dynamics. Respond ONLY with valid JSON.`;
+
+  const prompt = `Generate a stakeholder map for this initiative:
+
+Initiative: "${initiative}"
+Department: "${dept || 'Client Success'}"
+Context: "${context || 'ecommerce/DTC brand account management'}"
+
+Identify 6–8 stakeholders across these roles (not all roles need to be filled):
+- Decision Maker (final authority)
+- Approver (must sign off)
+- Influencer (shapes opinions but doesn't decide)
+- Executor (does the work, may include the trainee)
+- Observer (informed but not involved)
+- Champion (actively supports the initiative)
+- Blocker (may resist or slow down)
+
+For each stakeholder provide: role, name (realistic for the context), dept, priority (High/Medium/Low), communicationFrequency (Daily/Weekly/As-needed), and notes (1 sentence on how to manage this relationship).
+
+Also provide:
+- keyInsight (2 sentences on the most important dynamic in this stakeholder map)
+- communicationPlan (array of 3 rules for managing this stakeholder group)
+
+JSON only:
+{"stakeholders":[{"role":"","name":"","dept":"","priority":"","communicationFrequency":"","notes":""}],"keyInsight":"","communicationPlan":[]}`;
+
+  try {
+    const raw = await callClaude(system, prompt, 900);
+    const r = parseJSON(raw);
+    if (!r || !r.stakeholders) throw new Error('Parse failed');
+
+    const priorityColor = { High: 'var(--red)', Medium: 'var(--amber)', Low: 'var(--green)' };
+    const roleColor = { 'Decision Maker': 'var(--accent-dim)', 'Approver': 'var(--blue-dim)', 'Executor': 'var(--green-dim)', 'Champion': 'var(--green-dim)', 'Influencer': 'var(--amber-dim)', 'Blocker': 'var(--red-dim)', 'Observer': 'var(--border)' };
+    const roleBorder = { 'Decision Maker': 'rgba(99,102,241,0.3)', 'Approver': 'rgba(59,130,246,0.3)', 'Executor': 'rgba(16,185,129,0.3)', 'Champion': 'rgba(16,185,129,0.3)', 'Influencer': 'rgba(245,158,11,0.3)', 'Blocker': 'rgba(239,68,68,0.3)', 'Observer': 'var(--border)' };
+
+    out.innerHTML = `
+      <div style="margin-bottom:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;">
+        ${r.stakeholders.map(s => `
+          <div style="background:${roleColor[s.role]||'var(--bg-card)'};border:1px solid ${roleBorder[s.role]||'var(--border)'};border-radius:var(--radius);padding:14px;">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:4px;">${s.role}</div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:2px;">${s.name}</div>
+            <div style="font-size:11px;color:var(--text-secondary);margin-bottom:8px;">${s.dept}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <span style="font-size:10px;font-weight:600;color:${priorityColor[s.priority]||'var(--text-muted)'};">${s.priority} priority</span>
+              <span style="font-size:10px;color:var(--text-muted);">· ${s.communicationFrequency}</span>
+            </div>
+            ${s.notes ? `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.5;border-top:1px solid var(--border);padding-top:6px;">${s.notes}</div>` : ''}
+          </div>`).join('')}
+      </div>
+      ${r.keyInsight ? `<div style="padding:14px;background:var(--accent-dim);border:1px solid rgba(99,102,241,0.2);border-radius:var(--radius);margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:700;color:var(--accent-hover);margin-bottom:6px;">💡 Key Dynamic</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">${r.keyInsight}</div>
+      </div>` : ''}
+      ${r.communicationPlan && r.communicationPlan.length ? `<div class="card">
+        <div class="card-title" style="margin-bottom:10px;">Communication Rules for This Group</div>
+        <ul class="framework-steps">${r.communicationPlan.map(c=>`<li>${c}</li>`).join('')}</ul>
+      </div>` : ''}`;
+
+    toast('Stakeholder map generated and saved');
+  } catch (err) {
+    out.innerHTML = `<div style="padding:16px;background:var(--red-dim);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius);font-size:13px;color:var(--red);">⚠️ ${err.message}</div>`;
+  }
+}
+
+/* ============================================================
+   PERSISTENT STORAGE — DASHBOARD SYNC
+   ============================================================ */
+async function updateDashboardScores() {
+  const data = await dbLoad();
+  const subs = data.submissions || [];
+  if (!subs.length) return;
+
+  const commSubs = subs.filter(s => s.type === 'communication-drill');
+  const leadSubs = subs.filter(s => s.type === 'leadership-scenario');
+
+  if (commSubs.length) {
+    const avg = Math.round(commSubs.reduce((a, b) => a + b.score, 0) / commSubs.length);
+    const el = document.querySelector('.stat-card .stat-value[style*="var(--green)"]');
+    if (el && el.previousElementSibling?.textContent?.includes('Communication')) el.textContent = avg;
+  }
+}
+
+async function saveJournalEntry() {
+  const win = document.getElementById('journal-win')?.value?.trim();
+  const mistake = document.getElementById('journal-mistake')?.value?.trim();
+  const learning = document.getElementById('journal-learning')?.value?.trim();
+  const next = document.getElementById('journal-next')?.value?.trim();
+
+  if (!win && !mistake) { alert('Please fill in at least one field.'); return; }
+
+  const data = await dbLoad();
+  const journal = data.journal || [];
+  journal.unshift({
+    week: 5,
+    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    win: win || '',
+    mistake: mistake || '',
+    learning: learning || '',
+    next: next || '',
+    ts: Date.now()
+  });
+  await dbMerge({ journal });
+  closeModal('journal-modal');
+  toast('Journal entry saved');
+  renderStoredJournal();
+}
+
+async function saveDecision() {
+  const problem = document.getElementById('dec-problem')?.value?.trim();
+  const options = document.getElementById('dec-options')?.value?.trim();
+  const decision = document.getElementById('dec-decision')?.value?.trim();
+  const outcome = document.getElementById('dec-outcome')?.value?.trim();
+  const lesson = document.getElementById('dec-lesson')?.value?.trim();
+
+  if (!problem) { alert('Please enter the decision or problem.'); return; }
+
+  const data = await dbLoad();
+  const decisions = data.decisions || [];
+  decisions.unshift({ problem, options, decision, outcome, lesson, ts: Date.now(), week: 5, date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) });
+  await dbMerge({ decisions });
+  closeModal('decision-modal');
+  toast('Decision logged');
+  renderStoredDecisions();
+}
+
+async function renderStoredJournal() {
+  const data = await dbLoad();
+  const journal = data.journal || [];
+  if (!journal.length) return;
+
+  const container = document.getElementById('decisions-tab-journal');
+  if (!container) return;
+
+  const existing = container.querySelectorAll('.journal-entry.user-saved');
+  existing.forEach(e => e.remove());
+
+  const header = container.querySelector('div[style*="justify-content"]');
+  journal.forEach(entry => {
+    const el = document.createElement('div');
+    el.className = 'journal-entry user-saved';
+    el.style.borderLeft = '3px solid var(--green)';
+    el.innerHTML = `
+      <div class="journal-week">Week ${entry.week} · ${entry.date} <span style="color:var(--green);font-size:10px;margin-left:6px;">✓ Saved</span></div>
+      <div class="journal-quadrant">
+        ${entry.win ? `<div><div class="journal-q-label">🏆 Biggest Win</div><div class="journal-q-text">${entry.win}</div></div>` : ''}
+        ${entry.mistake ? `<div><div class="journal-q-label">❌ Biggest Mistake</div><div class="journal-q-text">${entry.mistake}</div></div>` : ''}
+        ${entry.learning ? `<div><div class="journal-q-label">💡 Biggest Learning</div><div class="journal-q-text">${entry.learning}</div></div>` : ''}
+        ${entry.next ? `<div><div class="journal-q-label">🎯 Next Improvement</div><div class="journal-q-text">${entry.next}</div></div>` : ''}
+      </div>`;
+    if (header) header.after(el);
+    else container.prepend(el);
+  });
+}
+
+async function renderStoredDecisions() {
+  const data = await dbLoad();
+  const decisions = data.decisions || [];
+  if (!decisions.length) return;
+
+  const container = document.getElementById('decisions-tab-tracker');
+  if (!container) return;
+
+  container.querySelectorAll('.decision-card.user-saved').forEach(e => e.remove());
+
+  const header = container.querySelector('div[style*="justify-content"]');
+  decisions.forEach(dec => {
+    const el = document.createElement('div');
+    el.className = 'decision-card user-saved';
+    el.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">Week ${dec.week} · ${dec.date} <span style="color:var(--green);font-size:10px;margin-left:4px;">✓ Saved</span></div>
+          <div style="font-size:14px;font-weight:700;">${dec.problem}</div>
+        </div>
+        <span class="badge ${dec.outcome ? 'badge-muted' : 'badge-accent'}">${dec.outcome ? 'Logged' : 'Pending outcome'}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;">
+        ${dec.options ? `<div><span style="color:var(--text-muted);">Options:</span><div style="color:var(--text-secondary);margin-top:2px;">${dec.options}</div></div>` : ''}
+        ${dec.decision ? `<div><span style="color:var(--text-muted);">Decision:</span><div style="color:var(--text-secondary);margin-top:2px;">${dec.decision}</div></div>` : ''}
+        ${dec.lesson ? `<div style="grid-column:1/-1"><span style="color:var(--text-muted);">Lesson:</span><div style="color:var(--text-secondary);margin-top:2px;">${dec.lesson}</div></div>` : ''}
+      </div>`;
+    if (header) header.after(el);
+    else container.prepend(el);
+  });
+}
+
+/* ============================================================
+   LOAD STORED DATA ON INIT
+   ============================================================ */
+async function loadStoredData() {
+  try {
+    await renderStoredJournal();
+    await renderStoredDecisions();
+    await updateDashboardScores();
+  } catch(e) { /* storage not ready yet */ }
+}
+
+/* ============================================================
+   MODALS (updated with IDs for storage)
+   ============================================================ */
+const moduleContent = {
+  ownership: { title:'Ownership Framework', objectives:['Define what ownership means at a lead level vs. individual contributor','Identify 3 situations where ownership is unclear and know how to claim it','Write a clear ownership statement for a current project'], template:'The Ownership Declaration Template', steps:['\"I own [outcome], which means I am responsible for [actions] by [date].\"', '\"I will keep [stakeholder] informed when [trigger condition] happens.\"', '\"If I cannot deliver, I will flag it by [checkpoint] — not after the deadline.\"'] },
+  accountability: { title:'Accountability Conversations', objectives:['Know when casual mentions are not enough','Use the SBI model to address patterns without attacking character','Set expectations with clear accountability checkpoints'], template:'Accountability Conversation Framework', steps:['State the behavior observed — specific, not characterization','Share the business impact that resulted','Set the expectation: "What I need is [specific behavior] by [date/time]"','Ask: "What will get in the way?" — listen before problem-solving','Confirm: "What did you hear me say?"'] },
+  delegation: { title:'Delegation Training', objectives:['Delegate with clarity — not just task, but ownership and success criteria','Set checkpoints that catch problems early without micromanaging','Hold accountability at the checkpoint, not just the deadline'], template:'Delegation Message Structure', steps:['\"I need [specific output] by [date and time].\"','\"You own this end-to-end. Success looks like: [criteria].\"','\"If you hit a blocker, flag me by [checkpoint], not after the deadline.\"','\"Any questions before you start?\"'] },
+  facilitation: { title:'Meeting Facilitation', objectives:['Open meetings with a clear objective, not just an agenda','Manage time so the right voices are heard','Close with documented decisions, actions, and owners'], template:'Meeting Facilitation Script', steps:['Open: "Today\'s objective is [X]. We need a decision on [Y] by [time]."','Timebox each agenda item upfront','Summarize decisions as they\'re made','Close: "Leaving with: [decisions], [actions], [owners]"'] },
+  escalation: { title:'Escalation Framework', objectives:['Know the 3 escalation triggers requiring immediate action','Write an escalation message that gives leadership what they need','Distinguish escalation from abdication'], template:'Escalation Message Formula', steps:['State what happened and the business impact in sentence 1','Include what you\'ve already done','State what you need — decision, awareness, or resources','Do not stop owning the situation while escalating'] }
+};
+
+function openModuleModal(title, key) {
+  const content = moduleContent[key];
+  if (!content) return;
+  document.getElementById('module-modal-title').textContent = content.title;
+  document.getElementById('module-modal-body').innerHTML = `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:600;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Learning Objectives</div>
+      <ul style="display:flex;flex-direction:column;gap:6px;">${content.objectives.map(o=>`<li class="feedback-li" style="font-size:13px;color:var(--text-secondary);"><span class="feedback-dot" style="background:var(--accent)"></span>${o}</li>`).join('')}</ul>
+    </div>
+    <div class="framework-card" style="margin-bottom:16px;">
+      <div class="framework-title">${content.template}</div>
+      <ul class="framework-steps">${content.steps.map(s=>`<li>${s}</li>`).join('')}</ul>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:600;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Quick Exercise</div>
+      <textarea class="field-textarea" style="min-height:80px;" placeholder="Apply this framework to a real situation from your current week…"></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="closeModal('module-modal')">Mark Complete & Close</button>`;
+  openModal('module-modal');
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(mo => {
+  mo.addEventListener('click', e => { if (e.target === mo) mo.classList.remove('open'); });
+});
+
+/* ============================================================
+   PROMO WEEKS + CHARTS (unchanged)
+   ============================================================ */
+function renderPromoWeeks() {
+  const container = document.getElementById('promo-weeks');
+  if (!container) return;
+  const weeks = [
+    {w:1,scores:[72,55,68,60,45,70,60,58],avg:61},
+    {w:2,scores:[75,60,70,65,50,74,65,63],avg:65},
+    {w:3,scores:[80,65,74,72,55,79,70,68],avg:70},
+    {w:4,scores:[85,68,79,78,58,82,74,73],avg:75},
+    {w:5,scores:[88,74,83,81,61,86,77,79],avg:78},
+    {w:6,scores:null,avg:null},
+    {w:7,scores:null,avg:null},
+    {w:8,scores:null,avg:null},
+  ];
+  const colors = ['#6366F1','#F59E0B','#10B981','#6366F1','#EF4444','#10B981','#F59E0B','#6366F1'];
+  const dims = ['Comm','Lead','Own','Init','Deleg','Prior','Risk','Biz'];
+  container.innerHTML = weeks.map(w => {
+    if (!w.scores) return `<div class="promo-week-row" style="opacity:0.3"><div class="promo-week-label">Wk ${w.w}</div><div class="promo-week-bars">${dims.map(()=>`<div class="promo-mini-bar" style="background:var(--border)"></div>`).join('')}</div><div class="promo-week-score" style="color:var(--text-muted)">—</div></div>`;
+    const color = w.avg >= 85 ? 'var(--green)' : w.avg >= 70 ? 'var(--amber)' : 'var(--red)';
+    return `<div class="promo-week-row"><div class="promo-week-label">Wk ${w.w}</div><div class="promo-week-bars">${w.scores.map((s,i)=>`<div class="promo-mini-bar" style="background:${colors[i]};opacity:${0.25+(s/100)*0.75}" title="${dims[i]}: ${s}"></div>`).join('')}</div><div class="promo-week-score" style="color:${color}">${w.avg}%</div></div>`;
+  }).join('');
+}
+
+function initCharts() { drawTrendChart(); }
+
+function drawTrendChart() {
+  const canvas = document.getElementById('trend-chart');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.parentElement.clientWidth || 400;
+  const h = 180;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const isDark = currentTheme === 'dark';
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+  const textColor = isDark ? '#475569' : '#94A3B8';
+  const weeks = ['W1','W2','W3','W4','W5'];
+  const series = [
+    {data:[72,78,82,85,88],color:'#6366F1'},
+    {data:[55,60,65,68,74],color:'#F59E0B'},
+    {data:[60,68,74,79,81],color:'#10B981'},
+  ];
+  const pL=36,pR=16,pT=12,pB=28,minV=40,maxV=100;
+  const cW=w-pL-pR,cH=h-pT-pB;
+  function xP(i){return pL+(i/(weeks.length-1))*cW;}
+  function yP(v){return pT+(1-(v-minV)/(maxV-minV))*cH;}
+  ctx.clearRect(0,0,w,h);
+  for(let v=50;v<=100;v+=10){
+    const y=yP(v);
+    ctx.strokeStyle=gridColor;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pL,y);ctx.lineTo(pL+cW,y);ctx.stroke();
+    ctx.fillStyle=textColor;ctx.font='10px Inter,system-ui,sans-serif';ctx.textAlign='right';ctx.fillText(v,pL-4,y+4);
+  }
+  weeks.forEach((lbl,i)=>{ctx.fillStyle=textColor;ctx.font='10px Inter,sans-serif';ctx.textAlign='center';ctx.fillText(lbl,xP(i),h-6);});
+  series.forEach(s=>{
+    ctx.beginPath();ctx.strokeStyle=s.color;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.lineCap='round';
+    s.data.forEach((v,i)=>{i===0?ctx.moveTo(xP(i),yP(v)):ctx.lineTo(xP(i),yP(v));});ctx.stroke();
+    s.data.forEach((v,i)=>{ctx.beginPath();ctx.fillStyle=s.color;ctx.arc(xP(i),yP(v),3.5,0,Math.PI*2);ctx.fill();});
+  });
+}
+
+function initHeatmapChart() {
+  const canvas = document.getElementById('heatmap-trend');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.parentElement.clientWidth || 500;
+  const h = 200;
+  canvas.width = w * dpr;canvas.height = h * dpr;
+  canvas.style.width = w + 'px';canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const isDark = currentTheme === 'dark';
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+  const textColor = isDark ? '#475569' : '#94A3B8';
+  const skills = ['Comm','Lead','Own','Init','Deleg','Prior','Risk','Biz'];
+  const values = [88,74,83,81,61,86,77,79];
+  const colors = ['#6366F1','#F59E0B','#10B981','#6366F1','#EF4444','#10B981','#F59E0B','#6366F1'];
+  const pL=40,pR=12,pT=16,pB=36,gap=8;
+  const cW=w-pL-pR,cH=h-pT-pB;
+  const barW=(cW-gap*(skills.length-1))/skills.length;
+  function yP(v){return pT+(1-v/100)*cH;}
+  ctx.clearRect(0,0,w,h);
+  [0,25,50,75,100].forEach(v=>{const y=yP(v);ctx.strokeStyle=gridColor;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pL,y);ctx.lineTo(pL+cW,y);ctx.stroke();ctx.fillStyle=textColor;ctx.font='10px Inter,sans-serif';ctx.textAlign='right';ctx.fillText(v,pL-4,y+4);});
+  skills.forEach((sk,i)=>{
+    const x=pL+i*(barW+gap);const top=yP(values[i]);const bH=cH-(top-pT);
+    const grad=ctx.createLinearGradient(x,top,x,pT+cH);
+    grad.addColorStop(0,colors[i]);grad.addColorStop(1,colors[i]+'33');
+    ctx.fillStyle=grad;ctx.beginPath();
+    const r=4,bx=x,by=top,bw=barW,bh=bH;
+    ctx.moveTo(bx+r,by);ctx.lineTo(bx+bw-r,by);ctx.arcTo(bx+bw,by,bx+bw,by+r,r);ctx.lineTo(bx+bw,by+bh);ctx.lineTo(bx,by+bh);ctx.arcTo(bx,by+bh,bx,by+bh-r,0);ctx.lineTo(bx,by+r);ctx.arcTo(bx,by,bx+r,by,r);ctx.closePath();ctx.fill();
+    ctx.fillStyle=colors[i];ctx.font='11px Inter,sans-serif';ctx.textAlign='center';ctx.fillText(values[i],x+barW/2,top-5);
+    ctx.fillStyle=textColor;ctx.font='10px Inter,sans-serif';ctx.fillText(sk,x+barW/2,h-8);
+  });
+}
+
+window.addEventListener('resize', () => {
+  const pg = document.querySelector('.page.active');
+  if (pg && pg.id === 'page-performance') { drawTrendChart(); initHeatmapChart(); }
+});
+
+/* Init stored data after a brief delay to let storage load */
+setTimeout(loadStoredData, 500);
+</script>
+</body>
+</html>
